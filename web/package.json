@@ -26,8 +26,14 @@
     "fumadocs-ui": "^15.5.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "vite": "^7.3.1",
+    "vite": "^7.3.2",
     "zod": "^3.24.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "path-to-regexp": ">=8.4.0",
+      "picomatch": ">=4.0.4"
+    }
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.13.3",

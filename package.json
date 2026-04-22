@@ -61,8 +61,8 @@
     "cloudflare": "^5.2.0",
     "daisyui": "^5.5.5",
     "dataforseo-client": "^2.0.19",
-    "drizzle-orm": "^0.44.4",
-    "fast-xml-parser": "^5.4.1",
+    "drizzle-orm": "^0.45.2",
+    "fast-xml-parser": "^5.5.6",
     "jose": "^6.0.12",
     "lucide-react": "^0.542.0",
     "papaparse": "^5.5.3",
@@ -98,9 +98,19 @@
     "prettier": "^3.6.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vite": "^7.1.2",
+    "vite": "^7.3.2",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4",
     "wrangler": "^4.45.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "protobufjs": ">=7.5.5",
+      "undici": ">=7.24.0",
+      "kysely": ">=0.28.14",
+      "picomatch": ">=4.0.4",
+      "defu": ">=6.1.5",
+      "path-to-regexp": ">=8.4.0"
+    }
   }
 }
