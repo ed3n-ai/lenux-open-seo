@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { AlertTriangle, ExternalLink } from "lucide-react";
 import { Sidebar } from "@/client/components/Sidebar";
 import { dataforseoHelpLinkOptions } from "@/client/navigation/items";
+import type { ContentWorkflowRole } from "@/client/features/content/contentManagerStorage";
 
 function SeoApiStatusBanners({
   shouldShowSeoApiWarning,
@@ -61,11 +62,13 @@ function SeoApiStatusBanners({
 function AppContent({
   drawerOpen,
   projectId,
+  workflowRole,
   onCloseDrawer,
   children,
 }: {
   drawerOpen: boolean;
   projectId: string | null;
+  workflowRole?: ContentWorkflowRole | null;
   onCloseDrawer: () => void;
   children: React.ReactNode;
 }) {
@@ -85,6 +88,7 @@ function AppContent({
             <div className="absolute left-0 top-0 h-full">
               <Sidebar
                 projectId={projectId}
+                workflowRole={workflowRole}
                 onNavigate={onCloseDrawer}
                 onClose={onCloseDrawer}
               />

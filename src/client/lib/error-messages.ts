@@ -12,6 +12,8 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
   NOT_FOUND: "The requested resource was not found.",
   AUDIT_CAPACITY_REACHED:
     "You've reached audit capacity for your account. Delete old audits from your projects to start a new one.",
+  CONTENT_WORD_LIMIT_REACHED:
+    "You've reached the monthly content writing limit for this workspace.",
   VALIDATION_ERROR: "Please check your input and try again.",
   CRAWL_TARGET_BLOCKED: "This crawl target is blocked by security policy.",
   BACKLINKS_NOT_ENABLED:

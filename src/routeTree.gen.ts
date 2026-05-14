@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
+import { Route as SandboxRouteImport } from './routes/sandbox'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
@@ -29,6 +30,7 @@ import { Route as ProjectPProjectIdRouteRouteImport } from './routes/_project/p/
 import { Route as ProjectPProjectIdIndexRouteImport } from './routes/_project/p/$projectId/index'
 import { Route as ProjectPProjectIdSavedRouteImport } from './routes/_project/p/$projectId/saved'
 import { Route as ProjectPProjectIdRankTrackingRouteImport } from './routes/_project/p/$projectId/rank-tracking'
+import { Route as ProjectPProjectIdPageIntelligenceRouteImport } from './routes/_project/p/$projectId/page-intelligence'
 import { Route as ProjectPProjectIdKeywordsRouteImport } from './routes/_project/p/$projectId/keywords'
 import { Route as ProjectPProjectIdDomainRouteImport } from './routes/_project/p/$projectId/domain'
 import { Route as ProjectPProjectIdBacklinksRouteImport } from './routes/_project/p/$projectId/backlinks'
@@ -42,6 +44,11 @@ import { Route as ProjectPProjectIdAuditIssuesResultIdRouteImport } from './rout
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SandboxRoute = SandboxRouteImport.update({
+  id: '/sandbox',
+  path: '/sandbox',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -136,6 +143,12 @@ const ProjectPProjectIdRankTrackingRoute =
     path: '/rank-tracking',
     getParentRoute: () => ProjectPProjectIdRouteRoute,
   } as any)
+const ProjectPProjectIdPageIntelligenceRoute =
+  ProjectPProjectIdPageIntelligenceRouteImport.update({
+    id: '/page-intelligence',
+    path: '/page-intelligence',
+    getParentRoute: () => ProjectPProjectIdRouteRoute,
+  } as any)
 const ProjectPProjectIdKeywordsRoute =
   ProjectPProjectIdKeywordsRouteImport.update({
     id: '/keywords',
@@ -192,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sandbox': typeof SandboxRoute
   '/verify-email': typeof VerifyEmailRoute
   '/billing': typeof AppBillingRoute
   '/support': typeof AppSupportRoute
@@ -207,6 +221,7 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
   '/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
+  '/p/$projectId/page-intelligence': typeof ProjectPProjectIdPageIntelligenceRoute
   '/p/$projectId/rank-tracking': typeof ProjectPProjectIdRankTrackingRouteWithChildren
   '/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
   '/p/$projectId/': typeof ProjectPProjectIdIndexRoute
@@ -219,6 +234,7 @@ export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sandbox': typeof SandboxRoute
   '/verify-email': typeof VerifyEmailRoute
   '/billing': typeof AppBillingRoute
   '/support': typeof AppSupportRoute
@@ -232,6 +248,7 @@ export interface FileRoutesByTo {
   '/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
   '/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
+  '/p/$projectId/page-intelligence': typeof ProjectPProjectIdPageIntelligenceRoute
   '/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
   '/p/$projectId': typeof ProjectPProjectIdIndexRoute
   '/p/$projectId/rank-tracking/$configId': typeof ProjectPProjectIdRankTrackingConfigIdRoute
@@ -247,6 +264,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sandbox': typeof SandboxRoute
   '/verify-email': typeof VerifyEmailRoute
   '/_app/billing': typeof AppBillingRoute
   '/_app/support': typeof AppSupportRoute
@@ -263,6 +281,7 @@ export interface FileRoutesById {
   '/_project/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/_project/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
   '/_project/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
+  '/_project/p/$projectId/page-intelligence': typeof ProjectPProjectIdPageIntelligenceRoute
   '/_project/p/$projectId/rank-tracking': typeof ProjectPProjectIdRankTrackingRouteWithChildren
   '/_project/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
   '/_project/p/$projectId/': typeof ProjectPProjectIdIndexRoute
@@ -277,6 +296,7 @@ export interface FileRouteTypes {
     | '/'
     | '/forgot-password'
     | '/reset-password'
+    | '/sandbox'
     | '/verify-email'
     | '/billing'
     | '/support'
@@ -292,6 +312,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/backlinks'
     | '/p/$projectId/domain'
     | '/p/$projectId/keywords'
+    | '/p/$projectId/page-intelligence'
     | '/p/$projectId/rank-tracking'
     | '/p/$projectId/saved'
     | '/p/$projectId/'
@@ -304,6 +325,7 @@ export interface FileRouteTypes {
     | '/'
     | '/forgot-password'
     | '/reset-password'
+    | '/sandbox'
     | '/verify-email'
     | '/billing'
     | '/support'
@@ -317,6 +339,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/backlinks'
     | '/p/$projectId/domain'
     | '/p/$projectId/keywords'
+    | '/p/$projectId/page-intelligence'
     | '/p/$projectId/saved'
     | '/p/$projectId'
     | '/p/$projectId/rank-tracking/$configId'
@@ -331,6 +354,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/forgot-password'
     | '/reset-password'
+    | '/sandbox'
     | '/verify-email'
     | '/_app/billing'
     | '/_app/support'
@@ -347,6 +371,7 @@ export interface FileRouteTypes {
     | '/_project/p/$projectId/backlinks'
     | '/_project/p/$projectId/domain'
     | '/_project/p/$projectId/keywords'
+    | '/_project/p/$projectId/page-intelligence'
     | '/_project/p/$projectId/rank-tracking'
     | '/_project/p/$projectId/saved'
     | '/_project/p/$projectId/'
@@ -363,6 +388,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SandboxRoute: typeof SandboxRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiAutumnSplatRoute: typeof ApiAutumnSplatRoute
@@ -375,6 +401,13 @@ declare module '@tanstack/react-router' {
       path: '/verify-email'
       fullPath: '/verify-email'
       preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sandbox': {
+      id: '/sandbox'
+      path: '/sandbox'
+      fullPath: '/sandbox'
+      preLoaderRoute: typeof SandboxRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -510,6 +543,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectPProjectIdRankTrackingRouteImport
       parentRoute: typeof ProjectPProjectIdRouteRoute
     }
+    '/_project/p/$projectId/page-intelligence': {
+      id: '/_project/p/$projectId/page-intelligence'
+      path: '/page-intelligence'
+      fullPath: '/p/$projectId/page-intelligence'
+      preLoaderRoute: typeof ProjectPProjectIdPageIntelligenceRouteImport
+      parentRoute: typeof ProjectPProjectIdRouteRoute
+    }
     '/_project/p/$projectId/keywords': {
       id: '/_project/p/$projectId/keywords'
       path: '/keywords'
@@ -635,6 +675,7 @@ interface ProjectPProjectIdRouteRouteChildren {
   ProjectPProjectIdBacklinksRoute: typeof ProjectPProjectIdBacklinksRoute
   ProjectPProjectIdDomainRoute: typeof ProjectPProjectIdDomainRoute
   ProjectPProjectIdKeywordsRoute: typeof ProjectPProjectIdKeywordsRoute
+  ProjectPProjectIdPageIntelligenceRoute: typeof ProjectPProjectIdPageIntelligenceRoute
   ProjectPProjectIdRankTrackingRoute: typeof ProjectPProjectIdRankTrackingRouteWithChildren
   ProjectPProjectIdSavedRoute: typeof ProjectPProjectIdSavedRoute
   ProjectPProjectIdIndexRoute: typeof ProjectPProjectIdIndexRoute
@@ -647,6 +688,8 @@ const ProjectPProjectIdRouteRouteChildren: ProjectPProjectIdRouteRouteChildren =
     ProjectPProjectIdBacklinksRoute: ProjectPProjectIdBacklinksRoute,
     ProjectPProjectIdDomainRoute: ProjectPProjectIdDomainRoute,
     ProjectPProjectIdKeywordsRoute: ProjectPProjectIdKeywordsRoute,
+    ProjectPProjectIdPageIntelligenceRoute:
+      ProjectPProjectIdPageIntelligenceRoute,
     ProjectPProjectIdRankTrackingRoute:
       ProjectPProjectIdRankTrackingRouteWithChildren,
     ProjectPProjectIdSavedRoute: ProjectPProjectIdSavedRoute,
@@ -701,6 +744,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SandboxRoute: SandboxRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiAutumnSplatRoute: ApiAutumnSplatRoute,

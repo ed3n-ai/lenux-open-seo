@@ -201,6 +201,44 @@ pnpm dev:agents
 
 When using a git worktree, [portless](https://github.com/vercel-labs/portless) prefixes the branch name, for example `http://feature-name.open-seo.localhost:1355`.
 
+### Client Sandbox
+
+For quick client demos and feasibility checks, use the isolated client sandbox:
+
+```sh
+cp .env.sandbox.example .env.local
+pnpm run dev
+```
+
+Open `http://localhost:3001/sandbox`.
+
+The sandbox route uses mock data only. It does not call DataForSEO and does not
+write to the database. When promoting a tested flow, use a dedicated
+DataForSEO test key first, then replace keys through environment variables or
+Cloudflare Worker secrets/bindings for production.
+
+### WordPress FastAPI
+
+For a dedicated WordPress integration API, use the standalone FastAPI service:
+
+```sh
+docker compose up -d wordpress-api
+```
+
+It starts on `http://127.0.0.1:8010` by default and expects:
+
+- `OPENSEO_WP_API_KEY`
+- `OPENSEO_WP_ALLOWED_SITES`
+
+Endpoints:
+
+- `GET /health`
+- `POST /v1/auth/test`
+- `POST /v1/content/drafts/generate`
+- `POST /v1/wordpress/posts/prepare`
+
+Service files live in [`services/wordpress-api`](./services/wordpress-api).
+
 ### Database Commands
 
 Generate migration:
@@ -235,6 +273,24 @@ Contributions are very welcome.
 - Community-driven improvements are prioritized, and high-quality PRs are encouraged.
 
 If you want to contribute but are unsure where to start, open an issue and describe what you want to build.
+
+## Legal, Attribution, and Security
+
+This repository is distributed under the MIT License. Keep the original
+copyright and license notice when copying, modifying, or redistributing the
+software.
+
+Additional project notices and contribution terms:
+
+- [`LICENSE`](./LICENSE): MIT License terms.
+- [`NOTICE`](./NOTICE): attribution, third-party, and no-guarantee notice.
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md): contribution scope and licensing terms.
+- [`SECURITY.md`](./SECURITY.md): private vulnerability reporting and secret-handling rules.
+- [`TRADEMARKS.md`](./TRADEMARKS.md): brand and third-party name usage guidance.
+
+OpenSEO does not guarantee search rankings, traffic, revenue, or business
+outcomes. Review third-party API costs, generated content, and SEO decisions
+before using them in production.
 
 ## SEO API Cost Reference
 

@@ -21,7 +21,7 @@ function IndexRedirect() {
     mutationFn: () => getOrCreateDefaultProject(),
     onSuccess: (project) => {
       void navigate({
-        to: "/p/$projectId/keywords",
+        to: "/p/$projectId",
         params: { projectId: project.id },
       });
     },

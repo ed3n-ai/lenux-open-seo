@@ -1,55 +1,48 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "open-seo",
-  "main": "src/server.ts",
-  "compatibility_date": "2025-09-02",
-  "compatibility_flags": ["nodejs_compat"],
-  "observability": {
-    "enabled": true,
-  },
-  "routes": [
-    {
-      "pattern": "app.openseo.so",
-      "custom_domain": true,
-    },
-    {
-      "pattern": "www.app.openseo.so",
-      "custom_domain": true,
-    },
-  ],
-  "workflows": [
-    {
-      "name": "site-audit-workflow",
-      "binding": "SITE_AUDIT_WORKFLOW",
-      "class_name": "SiteAuditWorkflow",
-    },
-    {
-      "name": "rank-check-workflow",
-      "binding": "RANK_CHECK_WORKFLOW",
-      "class_name": "RankCheckWorkflow",
-    },
-  ],
-  "triggers": {
-    "crons": ["*/15 * * * *"],
-  },
-  "kv_namespaces": [
-    {
-      "binding": "KV",
-      "id": "4abd52f3f2c549ac83cc2cb4ceec8620",
-    },
-  ],
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "open-seo",
-      "database_id": "37bee90a-e1aa-404f-b01e-b0d1d479bda1",
-      "migrations_dir": "drizzle",
-    },
-  ],
-  "r2_buckets": [
-    {
-      "bucket_name": "open-seo",
-      "binding": "R2",
-    },
-  ],
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "open-seo",
+	"main": "src/server.ts",
+	"compatibility_date": "2025-09-02",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"observability": {
+		"enabled": true,
+	},
+	"vars": {
+		"AUTH_MODE": "cloudflare_access",
+		"TEAM_DOMAIN": "https://lenux28.cloudflareaccess.com",
+		"POLICY_AUD": "02658f24aad054ef41701ae807642754886abff3af7b6e1308591e4fe790f3d9",
+	},
+	"routes": [
+		{
+			"pattern": "app.lenux28.cloud",
+			"custom_domain": true,
+		},
+	],
+	"triggers": {
+		"crons": [
+			"*/15 * * * *"
+		],
+	},
+	"kv_namespaces": [
+		{
+			"binding": "KV",
+			"id": "e08aad30d3444062b4d2d01b42c5981d",
+		},
+	],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "open seo fork",
+			"database_id": "c0631610-e726-4dc9-817f-04668f443992",
+			"migrations_dir": "drizzle",
+		},
+	],
+	"r2_buckets": [
+		{
+			"bucket_name": "open-seo",
+			"binding": "R2",
+		},
+	],
 }

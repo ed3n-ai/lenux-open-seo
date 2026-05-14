@@ -15,6 +15,11 @@ import {
 } from "@/client/layout/AppShellParts";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
 import { getProjectNavGroups } from "@/client/navigation/items";
+import {
+  getStoredWorkflowRole,
+  workflowRoleChangedEvent,
+  type ContentWorkflowRole,
+} from "@/client/features/content/contentManagerStorage";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { BILLING_ROUTE } from "@/shared/billing";
@@ -33,6 +38,7 @@ export function AuthenticatedAppLayout({
   banner?: React.ReactNode;
 }) {
   const location = useLocation();
+  const { data: session } = useSession();
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const setupModalRef = React.useRef<HTMLDivElement | null>(null);
   const [isSeoApiKeyConfigured, setIsSeoApiKeyConfigured] = React.useState<
@@ -41,9 +47,15 @@ export function AuthenticatedAppLayout({
   const [seoApiKeyStatusError, setSeoApiKeyStatusError] = React.useState(false);
   const [showMissingSeoApiKeyModal, setShowMissingSeoApiKeyModal] =
     React.useState(false);
+  const userKey = session?.user?.id ?? session?.user?.email ?? "local-user";
+  const workflowRole = useProjectWorkflowRole(projectId ?? null, userKey);
+  const shouldRunSeoSetupCheck =
+    Boolean(projectId) &&
+    workflowRole === "seo-operator" &&
+    location.pathname !== BILLING_ROUTE;
 
   React.useEffect(() => {
-    if (location.pathname === BILLING_ROUTE) {
+    if (!shouldRunSeoSetupCheck) {
       setSeoApiKeyStatusError(false);
       setIsSeoApiKeyConfigured(null);
       setShowMissingSeoApiKeyModal(false);
@@ -75,7 +87,7 @@ export function AuthenticatedAppLayout({
     return () => {
       cancelled = true;
     };
-  }, [location.pathname]);
+  }, [shouldRunSeoSetupCheck]);
 
   const shouldShowMissingSeoApiKeyModal =
     showMissingSeoApiKeyModal && location.pathname !== DATAFORSEO_HELP_PATH;
@@ -113,13 +125,18 @@ export function AuthenticatedAppLayout({
       <TopNav
         drawerOpen={drawerOpen}
         projectId={projectId ?? null}
+        workflowRole={workflowRole}
         pathname={location.pathname}
         onOpenDrawer={() => setDrawerOpen(true)}
       />
 
       <SeoApiStatusBanners
-        shouldShowSeoApiWarning={shouldShowSeoApiWarning}
-        seoApiKeyStatusError={seoApiKeyStatusError}
+        shouldShowSeoApiWarning={
+          workflowRole === "seo-operator" && shouldShowSeoApiWarning
+        }
+        seoApiKeyStatusError={
+          workflowRole === "seo-operator" && seoApiKeyStatusError
+        }
       />
 
       {banner}
@@ -127,6 +144,7 @@ export function AuthenticatedAppLayout({
       <AppContent
         drawerOpen={drawerOpen}
         projectId={projectId ?? null}
+        workflowRole={workflowRole}
         onCloseDrawer={() => setDrawerOpen(false)}
       >
         {children}
@@ -134,7 +152,9 @@ export function AuthenticatedAppLayout({
 
       <MissingSeoSetupModal
         ref={setupModalRef}
-        isOpen={shouldShowMissingSeoApiKeyModal}
+        isOpen={
+          workflowRole === "seo-operator" && shouldShowMissingSeoApiKeyModal
+        }
         onClose={() => setShowMissingSeoApiKeyModal(false)}
       />
     </div>
@@ -144,15 +164,19 @@ export function AuthenticatedAppLayout({
 function TopNav({
   drawerOpen,
   projectId,
+  workflowRole,
   pathname,
   onOpenDrawer,
 }: {
   drawerOpen: boolean;
   projectId: string | null;
+  workflowRole?: ContentWorkflowRole | null;
   pathname: string;
   onOpenDrawer: () => void;
 }) {
-  const navGroups = projectId ? getProjectNavGroups(projectId) : [];
+  const navGroups = projectId
+    ? getProjectNavGroups(projectId, workflowRole)
+    : [];
   const isSupportActive = pathname === SUPPORT_PATH;
 
   return (
@@ -181,8 +205,15 @@ function TopNav({
         {projectId
           ? navGroups.map((entry) => {
               if (entry.type === "standalone") {
-                const { icon: Icon, matchSegment, ...linkProps } = entry.item;
-                const isActive = pathname.includes(matchSegment);
+                const {
+                  icon: Icon,
+                  matchSegment,
+                  exactMatch,
+                  ...linkProps
+                } = entry.item;
+                const isActive = exactMatch
+                  ? pathname === linkProps.to.replace("$projectId", projectId)
+                  : pathname.includes(matchSegment);
                 return (
                   <Link
                     key={linkProps.to}
@@ -224,8 +255,16 @@ function TopNav({
                     className="dropdown-content z-20 menu mt-1 w-52 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
                   >
                     {entry.items.map((item) => {
-                      const { icon: Icon, matchSegment, ...linkProps } = item;
-                      const isActive = pathname.includes(matchSegment);
+                      const {
+                        icon: Icon,
+                        matchSegment,
+                        exactMatch,
+                        ...linkProps
+                      } = item;
+                      const isActive = exactMatch
+                        ? pathname ===
+                          linkProps.to.replace("$projectId", projectId)
+                        : pathname.includes(matchSegment);
                       return (
                         <li key={linkProps.to}>
                           <Link
@@ -296,6 +335,33 @@ function TopNav({
       <AccountMenu mobileOnly />
     </div>
   );
+}
+
+function useProjectWorkflowRole(projectId: string | null, userKey: string) {
+  const [role, setRole] = React.useState<ContentWorkflowRole | null>(null);
+
+  React.useEffect(() => {
+    if (!projectId) {
+      setRole(null);
+      return;
+    }
+
+    setRole(getStoredWorkflowRole(projectId, userKey));
+
+    function refresh() {
+      if (!projectId) return;
+      setRole(getStoredWorkflowRole(projectId, userKey));
+    }
+
+    window.addEventListener("storage", refresh);
+    window.addEventListener(workflowRoleChangedEvent, refresh);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener(workflowRoleChangedEvent, refresh);
+    };
+  }, [projectId, userKey]);
+
+  return role;
 }
 
 function AccountMenu({ mobileOnly = false }: { mobileOnly?: boolean }) {

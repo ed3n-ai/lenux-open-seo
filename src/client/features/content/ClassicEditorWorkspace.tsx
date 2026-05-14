@@ -1,0 +1,573 @@
+import * as React from "react";
+import { Check, Clipboard, Save, Send } from "lucide-react";
+import type { ContentCalendarItem } from "./contentManagerStorage";
+import { getProjectUserStorageKey } from "./contentManagerStorage";
+import {
+  buildClassicEditorPayload,
+  createClassicEditorDraft,
+  findClassicEditorDraft,
+  parseStoredClassicEditorDrafts,
+  upsertClassicEditorDraft,
+  type ClassicEditorContentDraft,
+  type WordPressClassicPostDraft,
+} from "./classicEditorModel";
+
+function writeJson(key: string, value: unknown) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(key, JSON.stringify(value));
+}
+
+function splitCsv(value: string) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function joinCsv(value: readonly string[]) {
+  return value.join(", ");
+}
+
+export function ClassicEditorWorkspace({
+  calendarItem,
+  contentDraft,
+  projectId,
+  userKey,
+}: {
+  calendarItem: ContentCalendarItem | null;
+  contentDraft: ClassicEditorContentDraft | null;
+  projectId: string;
+  userKey: string;
+}) {
+  const storageKey = getProjectUserStorageKey(
+    projectId,
+    userKey,
+    "classic-editor-drafts",
+  );
+  const [drafts, setDrafts] = React.useState<WordPressClassicPostDraft[]>([]);
+  const [draft, setDraft] = React.useState<WordPressClassicPostDraft | null>(
+    null,
+  );
+  const [savedState, setSavedState] = React.useState<"idle" | "saved">("idle");
+  const [copyState, setCopyState] = React.useState<"idle" | "copied">("idle");
+
+  React.useEffect(() => {
+    setDrafts(
+      parseStoredClassicEditorDrafts(window.localStorage.getItem(storageKey)),
+    );
+  }, [storageKey]);
+
+  React.useEffect(() => {
+    writeJson(storageKey, drafts);
+  }, [storageKey, drafts]);
+
+  React.useEffect(() => {
+    if (!calendarItem || !contentDraft) return;
+
+    setDrafts((current) => {
+      const existing = findClassicEditorDraft(
+        current,
+        calendarItem.id,
+        contentDraft.id,
+      );
+      const nextDraft =
+        existing ?? createClassicEditorDraft({ calendarItem, contentDraft });
+      setDraft(nextDraft);
+      return existing ? current : upsertClassicEditorDraft(current, nextDraft);
+    });
+    setSavedState("idle");
+    setCopyState("idle");
+  }, [calendarItem, contentDraft]);
+
+  function updateDraft(updater: (current: WordPressClassicPostDraft) => WordPressClassicPostDraft) {
+    setDraft((current) => {
+      if (!current) return current;
+      setSavedState("idle");
+      setCopyState("idle");
+      return updater(current);
+    });
+  }
+
+  function saveLocalDraft() {
+    if (!draft) return;
+    setDrafts((current) => upsertClassicEditorDraft(current, draft));
+    setSavedState("saved");
+    window.setTimeout(() => setSavedState("idle"), 1800);
+  }
+
+  async function copyPayload() {
+    if (!draft) return;
+    await navigator.clipboard.writeText(
+      JSON.stringify(buildClassicEditorPayload(draft), null, 2),
+    );
+    setCopyState("copied");
+    window.setTimeout(() => setCopyState("idle"), 1800);
+  }
+
+  if (!calendarItem || !contentDraft || !draft) {
+    return null;
+  }
+
+  const payload = buildClassicEditorPayload(draft);
+
+  return (
+    <section className="rounded-lg border border-base-300 bg-base-100 p-4 md:p-5">
+      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <Send className="size-5 text-primary" />
+            <h2 className="text-xl font-semibold">עורך פרסום</h2>
+          </div>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-base-content/70">
+            עריכת טיוטת WordPress בסגנון Classic Editor, כולל Yoast, טקסונומיה
+            ו־payload יציב לתוסף.
+          </p>
+        </div>
+        <div className="badge badge-outline self-start">טיוטת AI לעריכה</div>
+      </div>
+
+      <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="min-w-0 space-y-4">
+          <ClassicEditorTitlePanel draft={draft} onUpdate={updateDraft} />
+          <ClassicEditorContentPanel draft={draft} onUpdate={updateDraft} />
+          <YoastSeoBox draft={draft} onUpdate={updateDraft} />
+          <PayloadPreview
+            copyState={copyState}
+            onCopy={() => void copyPayload()}
+            payload={payload}
+          />
+        </div>
+
+        <aside className="space-y-4">
+          <ClassicEditorPublishBox
+            draft={draft}
+            onCopy={() => void copyPayload()}
+            onSave={saveLocalDraft}
+            onUpdate={updateDraft}
+            savedState={savedState}
+          />
+          <ClassicEditorTaxonomyBox draft={draft} onUpdate={updateDraft} />
+        </aside>
+      </div>
+    </section>
+  );
+}
+
+function ClassicEditorTitlePanel({
+  draft,
+  onUpdate,
+}: {
+  draft: WordPressClassicPostDraft;
+  onUpdate: (
+    updater: (current: WordPressClassicPostDraft) => WordPressClassicPostDraft,
+  ) => void;
+}) {
+  return (
+    <section className="rounded-md border border-base-300 bg-base-100 p-4">
+      <label className="form-control">
+        <span className="label pb-1 text-xs font-medium text-base-content/60">
+          כותרת הפוסט
+        </span>
+        <input
+          className="input input-bordered h-12 w-full text-lg md:text-2xl"
+          value={draft.editor.title}
+          onChange={(event) =>
+            onUpdate((current) => ({
+              ...current,
+              editor: { ...current.editor, title: event.target.value },
+              yoast: {
+                ...current.yoast,
+                seoTitle:
+                  current.yoast.seoTitle === current.editor.title
+                    ? event.target.value
+                    : current.yoast.seoTitle,
+              },
+            }))
+          }
+        />
+      </label>
+      <label className="form-control mt-3">
+        <span className="label pb-1 text-xs font-medium text-base-content/60">
+          Permalink / slug
+        </span>
+        <div className="flex flex-col gap-2 md:flex-row md:items-center">
+          <span className="text-xs text-base-content/60" dir="ltr">
+            /blog/
+          </span>
+          <input
+            className="input input-bordered input-sm w-full font-mono"
+            dir="ltr"
+            value={draft.editor.slug}
+            onChange={(event) =>
+              onUpdate((current) => ({
+                ...current,
+                editor: { ...current.editor, slug: event.target.value },
+              }))
+            }
+          />
+        </div>
+      </label>
+    </section>
+  );
+}
+
+function ClassicEditorContentPanel({
+  draft,
+  onUpdate,
+}: {
+  draft: WordPressClassicPostDraft;
+  onUpdate: (
+    updater: (current: WordPressClassicPostDraft) => WordPressClassicPostDraft,
+  ) => void;
+}) {
+  return (
+    <section className="overflow-hidden rounded-md border border-base-300 bg-base-100">
+      <div className="flex items-center gap-2 border-b border-base-300 bg-base-200 px-3 py-2">
+        <button className="btn btn-xs" type="button">
+          B
+        </button>
+        <button className="btn btn-xs" type="button">
+          I
+        </button>
+        <button className="btn btn-xs" type="button">
+          H2
+        </button>
+        <div className="ms-auto join">
+          <button className="btn btn-xs join-item btn-primary" type="button">
+            Visual
+          </button>
+          <button className="btn btn-xs join-item btn-outline" type="button">
+            HTML
+          </button>
+        </div>
+      </div>
+      <textarea
+        className="textarea min-h-96 w-full rounded-none border-0 bg-base-100 text-base leading-7 focus:outline-none"
+        dir={/[\u0590-\u05ff]/.test(draft.editor.contentHtml) ? "rtl" : "ltr"}
+        value={draft.editor.contentHtml}
+        onChange={(event) =>
+          onUpdate((current) => ({
+            ...current,
+            editor: { ...current.editor, contentHtml: event.target.value },
+          }))
+        }
+      />
+      <label className="form-control border-t border-base-300 p-3">
+        <span className="label pb-1 text-xs font-medium text-base-content/60">
+          excerpt
+        </span>
+        <textarea
+          className="textarea textarea-bordered min-h-20"
+          value={draft.editor.excerpt}
+          onChange={(event) =>
+            onUpdate((current) => ({
+              ...current,
+              editor: { ...current.editor, excerpt: event.target.value },
+            }))
+          }
+        />
+      </label>
+    </section>
+  );
+}
+
+function ClassicEditorPublishBox({
+  draft,
+  onCopy,
+  onSave,
+  onUpdate,
+  savedState,
+}: {
+  draft: WordPressClassicPostDraft;
+  onCopy: () => void;
+  onSave: () => void;
+  onUpdate: (
+    updater: (current: WordPressClassicPostDraft) => WordPressClassicPostDraft,
+  ) => void;
+  savedState: "idle" | "saved";
+}) {
+  return (
+    <section className="rounded-md border border-base-300 bg-base-100">
+      <div className="border-b border-base-300 px-4 py-3 font-semibold">
+        פרסום
+      </div>
+      <div className="space-y-3 p-4">
+        <label className="form-control">
+          <span className="label pb-1 text-xs text-base-content/60">
+            סטטוס יעד
+          </span>
+          <select
+            className="select select-bordered select-sm"
+            value={draft.publish.status}
+            onChange={(event) =>
+              onUpdate((current) => ({
+                ...current,
+                publish: {
+                  ...current.publish,
+                  status:
+                    event.target.value === "pending" ? "pending" : "draft",
+                },
+              }))
+            }
+          >
+            <option value="draft">draft</option>
+            <option value="pending">pending</option>
+          </select>
+        </label>
+        <label className="form-control">
+          <span className="label pb-1 text-xs text-base-content/60">
+            סוג תוכן
+          </span>
+          <select
+            className="select select-bordered select-sm"
+            value={draft.publish.postType}
+            onChange={(event) =>
+              onUpdate((current) => ({
+                ...current,
+                publish: {
+                  ...current.publish,
+                  postType: event.target.value === "page" ? "page" : "post",
+                },
+              }))
+            }
+          >
+            <option value="post">פוסט</option>
+            <option value="page">עמוד</option>
+          </select>
+        </label>
+        <label className="form-control">
+          <span className="label pb-1 text-xs text-base-content/60">
+            תזמון
+          </span>
+          <input
+            className="input input-bordered input-sm"
+            type="datetime-local"
+            value={draft.publish.scheduledAt ?? ""}
+            onChange={(event) =>
+              onUpdate((current) => ({
+                ...current,
+                publish: {
+                  ...current.publish,
+                  scheduledAt: event.target.value || undefined,
+                },
+              }))
+            }
+          />
+        </label>
+        <button className="btn btn-outline btn-sm w-full gap-2" onClick={onSave}>
+          {savedState === "saved" ? (
+            <Check className="size-4" />
+          ) : (
+            <Save className="size-4" />
+          )}
+          {savedState === "saved" ? "נשמר מקומית" : "שמירה מקומית"}
+        </button>
+        <button className="btn btn-primary btn-sm w-full gap-2" onClick={onCopy}>
+          <Clipboard className="size-4" />
+          העתק payload לתוסף
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function ClassicEditorTaxonomyBox({
+  draft,
+  onUpdate,
+}: {
+  draft: WordPressClassicPostDraft;
+  onUpdate: (
+    updater: (current: WordPressClassicPostDraft) => WordPressClassicPostDraft,
+  ) => void;
+}) {
+  return (
+    <section className="rounded-md border border-base-300 bg-base-100">
+      <div className="border-b border-base-300 px-4 py-3 font-semibold">
+        קטגוריות ותגיות
+      </div>
+      <div className="space-y-3 p-4">
+        <label className="form-control">
+          <span className="label pb-1 text-xs text-base-content/60">
+            קטגוריות
+          </span>
+          <input
+            className="input input-bordered input-sm"
+            value={joinCsv(draft.taxonomy.categories)}
+            onChange={(event) =>
+              onUpdate((current) => ({
+                ...current,
+                taxonomy: {
+                  ...current.taxonomy,
+                  categories: splitCsv(event.target.value),
+                },
+              }))
+            }
+          />
+        </label>
+        <label className="form-control">
+          <span className="label pb-1 text-xs text-base-content/60">
+            תגיות
+          </span>
+          <input
+            className="input input-bordered input-sm"
+            value={joinCsv(draft.taxonomy.tags)}
+            onChange={(event) =>
+              onUpdate((current) => ({
+                ...current,
+                taxonomy: {
+                  ...current.taxonomy,
+                  tags: splitCsv(event.target.value),
+                },
+              }))
+            }
+          />
+        </label>
+      </div>
+    </section>
+  );
+}
+
+function YoastSeoBox({
+  draft,
+  onUpdate,
+}: {
+  draft: WordPressClassicPostDraft;
+  onUpdate: (
+    updater: (current: WordPressClassicPostDraft) => WordPressClassicPostDraft,
+  ) => void;
+}) {
+  return (
+    <section className="rounded-md border border-base-300 bg-base-100 p-4">
+      <div className="flex items-center gap-2">
+        <h3 className="font-semibold">Yoast SEO</h3>
+        <span className="size-2 rounded-full bg-success" />
+        <span className="text-xs text-base-content/60">
+          Snippet preview ושדות SEO
+        </span>
+      </div>
+      <div className="mt-3 rounded-md border border-info/30 bg-info/10 p-3 text-left" dir="ltr">
+        <p className="text-lg leading-snug text-blue-700">{draft.yoast.seoTitle}</p>
+        <p className="mt-1 text-xs text-green-700">
+          https://example.com/blog/{draft.editor.slug}
+        </p>
+        <p className="mt-1 text-sm text-base-content/70">
+          {draft.yoast.metaDescription || draft.editor.excerpt}
+        </p>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <YoastInput
+          label="Focus keyphrase"
+          value={draft.yoast.focusKeyphrase}
+          onChange={(value) =>
+            onUpdate((current) => ({
+              ...current,
+              yoast: { ...current.yoast, focusKeyphrase: value },
+            }))
+          }
+        />
+        <YoastInput
+          label="SEO title"
+          value={draft.yoast.seoTitle}
+          onChange={(value) =>
+            onUpdate((current) => ({
+              ...current,
+              yoast: { ...current.yoast, seoTitle: value },
+            }))
+          }
+        />
+        <YoastInput
+          label="Canonical"
+          value={draft.yoast.canonical}
+          onChange={(value) =>
+            onUpdate((current) => ({
+              ...current,
+              yoast: { ...current.yoast, canonical: value },
+            }))
+          }
+        />
+        <YoastInput
+          label="Robots"
+          placeholder="index,follow"
+          value={draft.yoast.robots}
+          onChange={(value) =>
+            onUpdate((current) => ({
+              ...current,
+              yoast: { ...current.yoast, robots: value },
+            }))
+          }
+        />
+        <label className="form-control md:col-span-2">
+          <span className="label pb-1 text-xs text-base-content/60">
+            Meta description
+          </span>
+          <textarea
+            className="textarea textarea-bordered min-h-20"
+            value={draft.yoast.metaDescription}
+            onChange={(event) =>
+              onUpdate((current) => ({
+                ...current,
+                yoast: {
+                  ...current.yoast,
+                  metaDescription: event.target.value,
+                },
+              }))
+            }
+          />
+        </label>
+      </div>
+    </section>
+  );
+}
+
+function YoastInput({
+  label,
+  onChange,
+  placeholder,
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  value: string;
+}) {
+  return (
+    <label className="form-control">
+      <span className="label pb-1 text-xs text-base-content/60">{label}</span>
+      <input
+        className="input input-bordered"
+        placeholder={placeholder}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </label>
+  );
+}
+
+function PayloadPreview({
+  copyState,
+  onCopy,
+  payload,
+}: {
+  copyState: "idle" | "copied";
+  onCopy: () => void;
+  payload: unknown;
+}) {
+  return (
+    <section className="rounded-md border border-base-300 bg-base-200 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold">Payload לתוסף</h3>
+        <button className="btn btn-outline btn-sm gap-2" onClick={onCopy}>
+          {copyState === "copied" ? (
+            <Check className="size-4" />
+          ) : (
+            <Clipboard className="size-4" />
+          )}
+          {copyState === "copied" ? "הועתק" : "העתק"}
+        </button>
+      </div>
+      <pre className="mt-3 max-h-96 overflow-auto rounded-md bg-base-100 p-4 text-xs leading-5" dir="ltr">
+        {JSON.stringify(payload, null, 2)}
+      </pre>
+    </section>
+  );
+}

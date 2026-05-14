@@ -1,0 +1,1 @@
+"""OpenSEO WordPress integration API."""

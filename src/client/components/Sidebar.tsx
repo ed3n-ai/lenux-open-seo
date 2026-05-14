@@ -1,15 +1,22 @@
 import { Link } from "@tanstack/react-router";
 import { ChevronsUpDown, X } from "lucide-react";
 import { getProjectNavGroups } from "@/client/navigation/items";
+import type { ContentWorkflowRole } from "@/client/features/content/contentManagerStorage";
 
 interface SidebarProps {
   projectId: string;
+  workflowRole?: ContentWorkflowRole | null;
   onNavigate?: () => void;
   onClose?: () => void;
 }
 
-export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
-  const navGroups = getProjectNavGroups(projectId);
+export function Sidebar({
+  projectId,
+  workflowRole,
+  onNavigate,
+  onClose,
+}: SidebarProps) {
+  const navGroups = getProjectNavGroups(projectId, workflowRole);
 
   return (
     <div className="sidebar w-64 border-r border-base-300 h-full bg-base-100 flex flex-col">
@@ -44,13 +51,18 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
       <nav className="flex-1 py-2 pl-3 overflow-y-auto">
         {navGroups.map((entry) => {
           if (entry.type === "standalone") {
-            const { icon: Icon, ...linkProps } = entry.item;
+            const { icon: Icon, matchSegment, exactMatch, ...linkProps } =
+              entry.item;
+            void matchSegment;
             return (
               <Link
                 key={linkProps.to}
                 {...linkProps}
                 onClick={onNavigate}
-                activeOptions={{ exact: false, includeSearch: false }}
+                activeOptions={{
+                  exact: Boolean(exactMatch),
+                  includeSearch: false,
+                }}
                 className="relative flex items-center gap-3 px-4 py-2 text-sm text-base-content/60 transition-colors hover:bg-base-200 hover:text-base-content"
                 activeProps={{ className: "text-base-content font-medium" }}
               >
@@ -73,13 +85,18 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
                 {entry.label}
               </div>
               {entry.items.map((item) => {
-                const { icon: Icon, ...linkProps } = item;
+                const { icon: Icon, matchSegment, exactMatch, ...linkProps } =
+                  item;
+                void matchSegment;
                 return (
                   <Link
                     key={linkProps.to}
                     {...linkProps}
                     onClick={onNavigate}
-                    activeOptions={{ exact: false, includeSearch: false }}
+                    activeOptions={{
+                      exact: Boolean(exactMatch),
+                      includeSearch: false,
+                    }}
                     className="relative flex items-center gap-3 px-4 py-2 text-sm text-base-content/60 transition-colors hover:bg-base-200 hover:text-base-content"
                     activeProps={{ className: "text-base-content font-medium" }}
                   >

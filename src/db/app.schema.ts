@@ -371,3 +371,61 @@ export const auditLighthouseResults = sqliteTable(
   },
   (table) => [index("audit_lighthouse_results_audit_id_idx").on(table.auditId)],
 );
+
+// ============================================================================
+// Content writing tables
+// ============================================================================
+
+export const contentUsage = sqliteTable(
+  "content_usage",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    monthKey: text("month_key").notNull(),
+    wordsUsed: integer("words_used").notNull().default(0),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    uniqueIndex("content_usage_org_month_idx").on(
+      table.organizationId,
+      table.monthKey,
+    ),
+  ],
+);
+
+export const contentDrafts = sqliteTable(
+  "content_drafts",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    topic: text("topic").notNull(),
+    audience: text("audience").notNull(),
+    tone: text("tone").notNull(),
+    keywordsJson: text("keywords_json").notNull().default("[]"),
+    content: text("content").notNull(),
+    wordCount: integer("word_count").notNull(),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    index("content_drafts_project_created_idx").on(
+      table.projectId,
+      table.createdAt,
+    ),
+    index("content_drafts_org_created_idx").on(
+      table.organizationId,
+      table.createdAt,
+    ),
+  ],
+);
