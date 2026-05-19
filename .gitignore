@@ -39,3 +39,6 @@ dist/
 
 # Local codebase snapshots for review/learning. Never commit these.
 CODEBASE_SNAPSHOT*.local.*
+
+# Local nested SDK/cookbook clone used during development.
+cookbook/
