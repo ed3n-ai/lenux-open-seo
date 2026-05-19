@@ -15,6 +15,8 @@ declare namespace Cloudflare {
 
     // DataForSEO API Basic auth value (base64 of login:password)
     DATAFORSEO_API_KEY: string;
+    OPENAI_API_KEY?: string;
+    OPENAI_CONTENT_MODEL?: string;
   }
 }
 

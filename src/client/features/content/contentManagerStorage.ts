@@ -299,10 +299,12 @@ export function createCalendarItem(
 }
 
 export function createCalendarItemFromDraft(input: {
+  focusKeyphrase?: string;
   id: string;
   title: string;
 }): ContentCalendarItem {
   const title = input.title.trim() || "טיוטת תוכן";
+  const primaryKeyword = input.focusKeyphrase?.trim() || title;
 
   return {
     contentType: "טיוטת AI",
@@ -311,7 +313,7 @@ export function createCalendarItemFromDraft(input: {
     id: `standalone-${input.id}`,
     intent: "עריכה ופרסום",
     notes: "נוצר אוטומטית כדי לפתוח טיוטת AI קיימת בעורך הפרסום.",
-    primaryKeyword: title,
+    primaryKeyword,
     secondaryKeywords: [],
     status: "editing",
     title,

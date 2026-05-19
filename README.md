@@ -95,6 +95,11 @@ printf '%s' 'YOUR_LOGIN:YOUR_PASSWORD' | base64
 - Cloudflare: Set it in the workers UI
 - Local development: `.env.local`
 
+The content writer also needs OpenAI:
+
+- `OPENAI_API_KEY`: OpenAI API key for draft generation.
+- `OPENAI_CONTENT_MODEL`: optional model override. Defaults to `gpt-5`.
+
 ## Self-hosting
 
 OpenSEO supports two self-hosting paths:
@@ -181,6 +186,8 @@ Configure .env.local:
 2. Add `DATAFORSEO_API_KEY` as a base64-encoded `login:password` value:
 
    `printf '%s' 'YOUR_LOGIN:YOUR_PASSWORD' | base64`
+
+3. Add `OPENAI_API_KEY` for the content writer.
 
 Run Locally:
 

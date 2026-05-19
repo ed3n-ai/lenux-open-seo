@@ -63,6 +63,7 @@ describe("contentManagerStorage", () => {
 
   test("creates an editor-ready calendar item for standalone AI drafts", () => {
     const item = createCalendarItemFromDraft({
+      focusKeyphrase: "מנוע כתיבה AI",
       id: "draft-123",
       title: "מדריך AI למנהלי תוכן",
     });
@@ -70,7 +71,7 @@ describe("contentManagerStorage", () => {
     expect(item).toMatchObject({
       id: "standalone-draft-123",
       title: "מדריך AI למנהלי תוכן",
-      primaryKeyword: "מדריך AI למנהלי תוכן",
+      primaryKeyword: "מנוע כתיבה AI",
       contentType: "טיוטת AI",
       status: "editing",
     });

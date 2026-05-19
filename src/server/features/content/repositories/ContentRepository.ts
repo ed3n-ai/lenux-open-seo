@@ -43,6 +43,9 @@ async function createDraft(params: {
   tone: string;
   keywords: string[];
   content: string;
+  focusKeyphrase: string;
+  metaDescription: string;
+  seoTitle: string;
   wordCount: number;
 }) {
   await db.insert(contentDrafts).values({
@@ -55,6 +58,9 @@ async function createDraft(params: {
     tone: params.tone,
     keywordsJson: JSON.stringify(params.keywords),
     content: params.content,
+    focusKeyphrase: params.focusKeyphrase,
+    metaDescription: params.metaDescription,
+    seoTitle: params.seoTitle,
     wordCount: params.wordCount,
   });
 }

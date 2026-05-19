@@ -5,6 +5,9 @@ export type ClassicEditorContentDraft = {
   id: string;
   title: string;
   content: string;
+  focusKeyphrase?: string;
+  metaDescription?: string;
+  seoTitle?: string;
 };
 
 export type WordPressClassicPostDraft = {
@@ -118,7 +121,9 @@ export function createClassicEditorDraft({
   const contentPart = contentDraft ? stableDraftPart(contentDraft.id) : "";
   const draftSuffix = [calendarPart, contentPart].filter(Boolean).join("_");
   const title = contentDraft?.title.trim() || calendarItem.title;
-  const metaDescription = calendarItem.notes.trim().slice(0, 155);
+  const metaDescription =
+    contentDraft?.metaDescription?.trim() ||
+    calendarItem.notes.trim().slice(0, 155);
 
   return {
     editor: {
@@ -148,10 +153,11 @@ export function createClassicEditorDraft({
     },
     yoast: {
       canonical: "",
-      focusKeyphrase: calendarItem.primaryKeyword,
+      focusKeyphrase:
+        contentDraft?.focusKeyphrase?.trim() || calendarItem.primaryKeyword,
       metaDescription,
       robots: "",
-      seoTitle: title,
+      seoTitle: contentDraft?.seoTitle?.trim() || title,
     },
   };
 }
@@ -188,7 +194,9 @@ export function buildClassicEditorPayload(
   };
 }
 
-function parseClassicEditorDraft(value: unknown): WordPressClassicPostDraft | null {
+function parseClassicEditorDraft(
+  value: unknown,
+): WordPressClassicPostDraft | null {
   if (!isRecord(value)) return null;
   const identity = isRecord(value.identity) ? value.identity : null;
   const editor = isRecord(value.editor) ? value.editor : null;
@@ -239,8 +247,7 @@ function parseClassicEditorDraft(value: unknown): WordPressClassicPostDraft | nu
       lastSyncError: getString(sync.lastSyncError) || undefined,
       lastSyncStatus: getSyncStatus(sync.lastSyncStatus),
       lastSyncedAt: getString(sync.lastSyncedAt) || undefined,
-      wpPostId:
-        typeof sync.wpPostId === "number" ? sync.wpPostId : undefined,
+      wpPostId: typeof sync.wpPostId === "number" ? sync.wpPostId : undefined,
     },
     taxonomy: {
       categories: getStringList(taxonomy.categories),

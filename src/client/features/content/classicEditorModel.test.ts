@@ -26,7 +26,10 @@ describe("classicEditorModel", () => {
       calendarItem,
       contentDraft: {
         content: "# פתיחה\n\nגוף הטיוטה",
+        focusKeyphrase: "מילות מפתח אורגניות",
         id: "ai-draft-1",
+        metaDescription: "תיאור מטא שנוצר במנוע הכתיבה",
+        seoTitle: "כותרת SEO מטיוטת AI",
         title: "כותרת מטיוטת AI",
       },
     });
@@ -43,7 +46,11 @@ describe("classicEditorModel", () => {
       categories: ["SEO"],
       tags: ["SEO", "Yoast"],
     });
-    expect(draft.yoast.focusKeyphrase).toBe("מחקר מילות מפתח");
+    expect(draft.yoast).toMatchObject({
+      focusKeyphrase: "מילות מפתח אורגניות",
+      metaDescription: "תיאור מטא שנוצר במנוע הכתיבה",
+      seoTitle: "כותרת SEO מטיוטת AI",
+    });
   });
 
   test("keeps display title readable while normalizing slug only", () => {
@@ -104,9 +111,9 @@ describe("classicEditorModel", () => {
     });
 
     expect(parseStoredClassicEditorDrafts("not-json")).toEqual([]);
-    expect(parseStoredClassicEditorDrafts(JSON.stringify([{ bad: true }]))).toEqual(
-      [],
-    );
+    expect(
+      parseStoredClassicEditorDrafts(JSON.stringify([{ bad: true }])),
+    ).toEqual([]);
 
     const updated = {
       ...draft,

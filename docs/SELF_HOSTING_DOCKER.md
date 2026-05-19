@@ -19,7 +19,7 @@ cp .env.example .env
 docker compose up -d
 ```
 
-Set `DATAFORSEO_API_KEY` in `.env`, then open `http://localhost:<PORT>` (default `3001`).
+Set `DATAFORSEO_API_KEY` and `OPENAI_API_KEY` in `.env`, then open `http://localhost:<PORT>` (default `3001`).
 
 Docker Compose passes `.env` values into the container, and `compose.yaml` enables `CLOUDFLARE_INCLUDE_PROCESS_ENV=true` so the Cloudflare Vite runtime can read them as Worker bindings during local self-hosting.
 
@@ -29,6 +29,7 @@ Optional env values:
 - `ALLOWED_HOST` (single reverse-proxy hostname to allow in Vite preview)
 - `AUTH_MODE=local_noauth` (already set in compose)
 - `OPEN_SEO_IMAGE` (defaults to `ghcr.io/every-app/open-seo:latest`)
+- `OPENAI_CONTENT_MODEL` (defaults to `gpt-5`)
 
 If you are putting Docker behind a reverse proxy or a temporary tunnel, remember that Docker self-hosting runs with app auth disabled. Only expose it behind your own auth-protected reverse proxy, tunnel, or private network, and add the public hostname before restarting:
 

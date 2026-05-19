@@ -35,23 +35,114 @@ function escapeHtml(value: string) {
 }
 
 export function markdownishToHtml(value: string) {
-  return value
-    .split(/\n{2,}/)
-    .map((block) => block.trim())
-    .filter(Boolean)
-    .map((block) => {
-      if (block.startsWith("# ")) {
-        return `<h1>${escapeHtml(block.slice(2))}</h1>`;
+  const html: string[] = [];
+  let paragraph: string[] = [];
+  let listItems: string[] = [];
+  let tableRows: string[][] = [];
+
+  function flushParagraph() {
+    if (!paragraph.length) return;
+    html.push(
+      `<p>${escapeHtml(paragraph.join("\n")).replace(/\n/g, "<br />")}</p>`,
+    );
+    paragraph = [];
+  }
+
+  function flushList() {
+    if (!listItems.length) return;
+    html.push(
+      `<ul>${listItems
+        .map((item) => `<li>${escapeHtml(item)}</li>`)
+        .join("")}</ul>`,
+    );
+    listItems = [];
+  }
+
+  function flushTable() {
+    if (tableRows.length < 2) {
+      tableRows = [];
+      return;
+    }
+
+    const [head, ...body] = tableRows;
+    html.push(
+      [
+        "<table>",
+        "<thead><tr>",
+        ...head.map((cell) => `<th>${escapeHtml(cell)}</th>`),
+        "</tr></thead>",
+        "<tbody>",
+        ...body.map(
+          (row) =>
+            `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`,
+        ),
+        "</tbody>",
+        "</table>",
+      ].join(""),
+    );
+    tableRows = [];
+  }
+
+  function parseTableRow(line: string) {
+    if (!line.startsWith("|") || !line.endsWith("|")) return null;
+    const cells = line
+      .slice(1, -1)
+      .split("|")
+      .map((cell) => cell.trim());
+    return cells.length >= 2 ? cells : null;
+  }
+
+  function isTableSeparator(cells: string[]) {
+    return cells.every((cell) => /^:?-{3,}:?$/.test(cell));
+  }
+
+  for (const rawLine of value.split(/\n/)) {
+    const line = rawLine.trim();
+    if (!line) {
+      flushParagraph();
+      flushList();
+      flushTable();
+      continue;
+    }
+
+    const heading = /^(#{1,3})\s+(.+)$/.exec(line);
+    if (heading) {
+      flushParagraph();
+      flushList();
+      flushTable();
+      const level = heading[1].length;
+      html.push(`<h${level}>${escapeHtml(heading[2])}</h${level}>`);
+      continue;
+    }
+
+    const tableRow = parseTableRow(line);
+    if (tableRow) {
+      flushParagraph();
+      flushList();
+      if (!isTableSeparator(tableRow)) {
+        tableRows.push(tableRow);
       }
-      if (block.startsWith("## ")) {
-        return `<h2>${escapeHtml(block.slice(3))}</h2>`;
-      }
-      if (block.startsWith("### ")) {
-        return `<h3>${escapeHtml(block.slice(4))}</h3>`;
-      }
-      return `<p>${escapeHtml(block).replace(/\n/g, "<br />")}</p>`;
-    })
-    .join("\n");
+      continue;
+    }
+
+    const listItem = /^[-*]\s+(.+)$/.exec(line);
+    if (listItem) {
+      flushParagraph();
+      flushTable();
+      listItems.push(listItem[1]);
+      continue;
+    }
+
+    flushList();
+    flushTable();
+    paragraph.push(line);
+  }
+
+  flushParagraph();
+  flushList();
+  flushTable();
+
+  return html.join("\n");
 }
 
 export function WordPressPublishSection({

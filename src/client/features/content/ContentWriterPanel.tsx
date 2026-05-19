@@ -13,6 +13,9 @@ export type ContentWriterDraftResult = {
   id: string;
   title: string;
   content: string;
+  focusKeyphrase?: string;
+  metaDescription?: string;
+  seoTitle?: string;
   wordCount: number;
   createdAt?: string;
 };
@@ -325,11 +328,14 @@ export function ContentWriterPanel({
                         הטיוטה פתוחה בעורך הפרסום למטה.
                       </p>
                       <p className="mt-1 text-xs text-base-content/60">
-                        כדי למנוע כפילות, גוף המאמר מוצג כעת רק בעורך שבו
-                        מבצעים עריכה, Yoast ופרסום.
+                        כדי למנוע כפילות, גוף המאמר מוצג כעת רק בעורך שבו מבצעים
+                        עריכה, Yoast ופרסום.
                       </p>
                     </div>
-                    <a className="btn btn-sm btn-outline" href="#publishing-editor">
+                    <a
+                      className="btn btn-sm btn-outline"
+                      href="#publishing-editor"
+                    >
                       עבור לעורך
                     </a>
                   </div>

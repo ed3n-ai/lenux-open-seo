@@ -12,6 +12,10 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
   NOT_FOUND: "The requested resource was not found.",
   AUDIT_CAPACITY_REACHED:
     "You've reached audit capacity for your account. Delete old audits from your projects to start a new one.",
+  CONTENT_AI_CONFIG_MISSING:
+    "OpenAI is not configured yet. Add OPENAI_API_KEY before generating drafts.",
+  CONTENT_AI_GENERATION_FAILED:
+    "The AI writer could not generate a draft. Please try again or adjust the brief.",
   CONTENT_WORD_LIMIT_REACHED:
     "You've reached the monthly content writing limit for this workspace.",
   VALIDATION_ERROR: "Please check your input and try again.",

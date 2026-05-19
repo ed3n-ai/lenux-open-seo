@@ -31,6 +31,9 @@ In the Cloudflare dashboard:
    - `POLICY_AUD` (from Access setup)
    - `TEAM_DOMAIN` (domain from `JWKS_URL`, for example `https://your-team.cloudflareaccess.com`)
    - `DATAFORSEO_API_KEY`
+   - `OPENAI_API_KEY`
+
+   `OPENAI_CONTENT_MODEL` is optional and defaults to `gpt-5`.
 
 ### 3) Optional: add an R2 lifecycle rule
 

@@ -413,6 +413,9 @@ export const contentDrafts = sqliteTable(
     tone: text("tone").notNull(),
     keywordsJson: text("keywords_json").notNull().default("[]"),
     content: text("content").notNull(),
+    seoTitle: text("seo_title").notNull().default(""),
+    metaDescription: text("meta_description").notNull().default(""),
+    focusKeyphrase: text("focus_keyphrase").notNull().default(""),
     wordCount: integer("word_count").notNull(),
     createdAt: text("created_at")
       .notNull()
