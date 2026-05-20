@@ -222,16 +222,16 @@ export function ClassicEditorWorkspace({
   const payload = buildClassicEditorPayload(draft);
 
   return (
-    <section className="rounded-lg border border-base-300 bg-base-100 p-4 md:p-5">
-      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+    <section className="rounded-lg border border-base-300 bg-base-200/40 p-4 md:p-5">
+      <div className="flex flex-col gap-2 border-b border-base-300 pb-4 md:flex-row md:items-start md:justify-between">
         <div>
           <div className="flex items-center gap-2">
             <Send className="size-5 text-primary" />
             <h2 className="text-xl font-semibold">עורך פרסום</h2>
           </div>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-base-content/70">
-            עריכת טיוטת WordPress בסגנון Classic Editor, כולל Yoast, טקסונומיה
-            ו־payload יציב לתוסף.
+            סביבת הכנה בסגנון WordPress Classic Editor: עריכה, Yoast ושליחה
+            לטיוטה באתר היעד.
           </p>
         </div>
         <div className="badge badge-outline self-start">טיוטת AI לעריכה</div>
@@ -239,8 +239,7 @@ export function ClassicEditorWorkspace({
 
       <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="min-w-0 space-y-4">
-          <ClassicEditorTitlePanel draft={draft} onUpdate={updateDraft} />
-          <ClassicEditorContentPanel draft={draft} onUpdate={updateDraft} />
+          <ClassicEditorMainPanel draft={draft} onUpdate={updateDraft} />
           <YoastSeoBox draft={draft} onUpdate={updateDraft} />
           <PayloadPreview
             copyState={copyState}
@@ -250,6 +249,17 @@ export function ClassicEditorWorkspace({
         </div>
 
         <aside className="space-y-4">
+          <ClassicEditorPublishBox
+            canPublish={Boolean(connectionQuery.data?.hasSharedSecret)}
+            connection={connectionQuery.data}
+            draft={draft}
+            onCopy={() => void copyPayload()}
+            onPublish={publishCurrentDraft}
+            onSave={saveLocalDraft}
+            onUpdate={updateDraft}
+            publishPending={publishMutation.isPending}
+            savedState={savedState}
+          />
           <WordPressConnectionBox
             connection={connectionQuery.data}
             form={connectionForm}
@@ -270,17 +280,6 @@ export function ClassicEditorWorkspace({
             }
             testPending={testConnectionMutation.isPending}
           />
-          <ClassicEditorPublishBox
-            canPublish={Boolean(connectionQuery.data?.hasSharedSecret)}
-            connection={connectionQuery.data}
-            draft={draft}
-            onCopy={() => void copyPayload()}
-            onPublish={publishCurrentDraft}
-            onSave={saveLocalDraft}
-            onUpdate={updateDraft}
-            publishPending={publishMutation.isPending}
-            savedState={savedState}
-          />
           {draft.publish.postType === "post" ? (
             <ClassicEditorTaxonomyBox draft={draft} onUpdate={updateDraft} />
           ) : (
@@ -288,6 +287,23 @@ export function ClassicEditorWorkspace({
           )}
         </aside>
       </div>
+    </section>
+  );
+}
+
+function ClassicMetaBox({
+  children,
+  title,
+}: {
+  children: React.ReactNode;
+  title: string;
+}) {
+  return (
+    <section className="overflow-hidden rounded-sm border border-base-300 bg-base-100">
+      <div className="border-b border-base-300 bg-base-200 px-4 py-2 text-sm font-semibold">
+        {title}
+      </div>
+      <div className="p-4">{children}</div>
     </section>
   );
 }
@@ -449,7 +465,7 @@ function WordPressConnectionBox({
   );
 }
 
-function ClassicEditorTitlePanel({
+function ClassicEditorMainPanel({
   draft,
   onUpdate,
 }: {
@@ -458,14 +474,14 @@ function ClassicEditorTitlePanel({
     updater: (current: WordPressClassicPostDraft) => WordPressClassicPostDraft,
   ) => void;
 }) {
+  const isHebrewContent = /[\u0590-\u05ff]/.test(draft.editor.contentHtml);
+
   return (
-    <section className="rounded-md border border-base-300 bg-base-100 p-4">
-      <label className="form-control">
-        <span className="label pb-1 text-xs font-medium text-base-content/60">
-          כותרת הפוסט
-        </span>
+    <section className="space-y-4">
+      <div className="rounded-sm border border-base-300 bg-base-100 p-3">
         <input
-          className="input input-bordered h-12 w-full text-lg md:text-2xl"
+          className="input input-bordered h-14 w-full rounded-sm bg-base-100 text-xl md:text-3xl"
+          placeholder="הוסף כותרת"
           value={draft.editor.title}
           onChange={(event) =>
             onUpdate((current) => ({
@@ -481,17 +497,15 @@ function ClassicEditorTitlePanel({
             }))
           }
         />
-      </label>
-      <label className="form-control mt-3">
-        <span className="label pb-1 text-xs font-medium text-base-content/60">
-          Permalink / slug
-        </span>
-        <div className="flex flex-col gap-2 md:flex-row md:items-center">
-          <span className="text-xs text-base-content/60" dir="ltr">
-            /blog/
+        <div className="mt-3 flex flex-col gap-2 text-xs md:flex-row md:items-center">
+          <span className="font-medium text-base-content/70">
+            Permalink:
+          </span>
+          <span className="text-base-content/50" dir="ltr">
+            /blog
           </span>
           <input
-            className="input input-bordered input-sm w-full font-mono"
+            className="input input-bordered input-sm min-w-0 flex-1 rounded-sm font-mono"
             dir="ltr"
             value={draft.editor.slug}
             onChange={(event) =>
@@ -502,58 +516,53 @@ function ClassicEditorTitlePanel({
             }
           />
         </div>
-      </label>
-    </section>
-  );
-}
-
-function ClassicEditorContentPanel({
-  draft,
-  onUpdate,
-}: {
-  draft: WordPressClassicPostDraft;
-  onUpdate: (
-    updater: (current: WordPressClassicPostDraft) => WordPressClassicPostDraft,
-  ) => void;
-}) {
-  return (
-    <section className="overflow-hidden rounded-md border border-base-300 bg-base-100">
-      <div className="flex items-center gap-2 border-b border-base-300 bg-base-200 px-3 py-2">
-        <button className="btn btn-xs" type="button">
-          B
-        </button>
-        <button className="btn btn-xs" type="button">
-          I
-        </button>
-        <button className="btn btn-xs" type="button">
-          H2
-        </button>
-        <div className="ms-auto join">
-          <button className="btn btn-xs join-item btn-primary" type="button">
-            Visual
-          </button>
-          <button className="btn btn-xs join-item btn-outline" type="button">
-            HTML
-          </button>
-        </div>
       </div>
-      <textarea
-        className="textarea min-h-96 w-full rounded-none border-0 bg-base-100 text-base leading-7 focus:outline-none"
-        dir={/[\u0590-\u05ff]/.test(draft.editor.contentHtml) ? "rtl" : "ltr"}
-        value={draft.editor.contentHtml}
-        onChange={(event) =>
-          onUpdate((current) => ({
-            ...current,
-            editor: { ...current.editor, contentHtml: event.target.value },
-          }))
-        }
-      />
-      <label className="form-control border-t border-base-300 p-3">
-        <span className="label pb-1 text-xs font-medium text-base-content/60">
-          excerpt
-        </span>
+
+      <section className="overflow-hidden rounded-sm border border-base-300 bg-base-100">
+        <div className="flex items-end justify-between gap-3 border-b border-base-300 bg-base-200 px-3 pt-2">
+          <div className="join">
+            <button className="btn btn-xs join-item btn-outline" type="button">
+              Visual
+            </button>
+            <button className="btn btn-xs join-item btn-primary" type="button">
+              HTML
+            </button>
+          </div>
+          <div className="flex items-center gap-1 pb-2">
+            <button className="btn btn-square btn-ghost btn-xs" type="button">
+              B
+            </button>
+            <button className="btn btn-square btn-ghost btn-xs" type="button">
+              I
+            </button>
+            <button className="btn btn-ghost btn-xs" type="button">
+              H2
+            </button>
+            <button className="btn btn-ghost btn-xs" type="button">
+              H3
+            </button>
+          </div>
+        </div>
         <textarea
-          className="textarea textarea-bordered min-h-20"
+          className="textarea min-h-[34rem] w-full rounded-none border-0 bg-base-100 px-5 py-4 text-base leading-8 focus:outline-none"
+          dir={isHebrewContent ? "rtl" : "ltr"}
+          value={draft.editor.contentHtml}
+          onChange={(event) =>
+            onUpdate((current) => ({
+              ...current,
+              editor: { ...current.editor, contentHtml: event.target.value },
+            }))
+          }
+        />
+        <div className="flex items-center justify-between border-t border-base-300 bg-base-200 px-4 py-2 text-xs text-base-content/60">
+          <span>מקור HTML</span>
+          <span>{draft.editor.contentHtml.length.toLocaleString()} תווים</span>
+        </div>
+      </section>
+
+      <ClassicMetaBox title="תקציר">
+        <textarea
+          className="textarea textarea-bordered min-h-24 w-full rounded-sm bg-base-100"
           value={draft.editor.excerpt}
           onChange={(event) =>
             onUpdate((current) => ({
@@ -562,7 +571,7 @@ function ClassicEditorContentPanel({
             }))
           }
         />
-      </label>
+      </ClassicMetaBox>
     </section>
   );
 }
@@ -970,10 +979,12 @@ function PayloadPreview({
   payload: unknown;
 }) {
   return (
-    <section className="rounded-md border border-base-300 bg-base-200 p-4">
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold">Payload לתוסף</h3>
-        <button className="btn btn-outline btn-sm gap-2" onClick={onCopy}>
+    <details className="rounded-sm border border-base-300 bg-base-100">
+      <summary className="cursor-pointer border-b border-base-300 bg-base-200 px-4 py-2 text-sm font-semibold">
+        Payload לתוסף
+      </summary>
+      <div className="flex justify-end border-b border-base-300 px-4 py-3">
+        <button className="btn btn-outline btn-xs gap-2" onClick={onCopy}>
           {copyState === "copied" ? (
             <Check className="size-4" />
           ) : (
@@ -982,9 +993,9 @@ function PayloadPreview({
           {copyState === "copied" ? "הועתק" : "העתק"}
         </button>
       </div>
-      <pre className="mt-3 max-h-96 overflow-auto rounded-md bg-base-100 p-4 text-xs leading-5" dir="ltr">
+      <pre className="max-h-96 overflow-auto bg-base-100 p-4 text-xs leading-5" dir="ltr">
         {JSON.stringify(payload, null, 2)}
       </pre>
-    </section>
+    </details>
   );
 }
