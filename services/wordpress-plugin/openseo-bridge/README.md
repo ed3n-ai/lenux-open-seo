@@ -1,6 +1,6 @@
-# OpenSEO Bridge
+# Lenux28 SEO Bridge
 
-Minimal WordPress plugin for the OpenSEO public repository.
+Minimal WordPress plugin for connecting Lenux28 SEO to a customer WordPress site.
 
 ## Endpoint
 
@@ -9,6 +9,10 @@ Minimal WordPress plugin for the OpenSEO public repository.
 Send the shared secret in:
 
 `x-openseo-secret: <secret>`
+
+Health check:
+
+`GET /wp-json/openseo/v1/health`
 
 ## Supported MVP fields
 

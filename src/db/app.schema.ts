@@ -432,3 +432,36 @@ export const contentDrafts = sqliteTable(
     ),
   ],
 );
+
+export const wordpressSiteConnections = sqliteTable(
+  "wordpress_site_connections",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    displayName: text("display_name").notNull().default("Lenux28 SEO"),
+    siteUrl: text("site_url").notNull(),
+    sharedSecret: text("shared_secret").notNull(),
+    lastStatus: text("last_status", {
+      enum: ["unchecked", "connected", "failed"],
+    })
+      .notNull()
+      .default("unchecked"),
+    lastError: text("last_error"),
+    lastCheckedAt: text("last_checked_at"),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    uniqueIndex("wordpress_site_connections_project_idx").on(table.projectId),
+    index("wordpress_site_connections_org_idx").on(table.organizationId),
+  ],
+);

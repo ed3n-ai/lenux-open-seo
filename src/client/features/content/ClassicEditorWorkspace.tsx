@@ -1,5 +1,13 @@
 import * as React from "react";
-import { Check, Clipboard, Save, Send } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Check, Clipboard, ExternalLink, PlugZap, Save, Send } from "lucide-react";
+import {
+  getWordPressConnection,
+  publishWordPressDraft,
+  saveWordPressConnection,
+  testWordPressConnection,
+} from "@/serverFunctions/content";
+import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import type { ContentCalendarItem } from "./contentManagerStorage";
 import { getProjectUserStorageKey } from "./contentManagerStorage";
 import {
@@ -28,6 +36,18 @@ function joinCsv(value: readonly string[]) {
   return value.join(", ");
 }
 
+function getStringProperty(value: unknown, key: string) {
+  if (!value || typeof value !== "object" || !(key in value)) return "";
+  const property = (value as Record<string, unknown>)[key];
+  return typeof property === "string" ? property : "";
+}
+
+function getNumberProperty(value: unknown, key: string) {
+  if (!value || typeof value !== "object" || !(key in value)) return undefined;
+  const property = (value as Record<string, unknown>)[key];
+  return typeof property === "number" ? property : undefined;
+}
+
 export function ClassicEditorWorkspace({
   calendarItem,
   contentDraft,
@@ -50,6 +70,25 @@ export function ClassicEditorWorkspace({
   );
   const [savedState, setSavedState] = React.useState<"idle" | "saved">("idle");
   const [copyState, setCopyState] = React.useState<"idle" | "copied">("idle");
+  const [connectionForm, setConnectionForm] = React.useState({
+    displayName: "Lenux28 SEO",
+    sharedSecret: "",
+    siteUrl: "",
+  });
+
+  const connectionQuery = useQuery({
+    queryKey: ["wordpress-connection", projectId],
+    queryFn: () => getWordPressConnection({ data: { projectId } }),
+  });
+
+  React.useEffect(() => {
+    if (!connectionQuery.data) return;
+    setConnectionForm((current) => ({
+      displayName: connectionQuery.data?.displayName || current.displayName,
+      sharedSecret: current.sharedSecret,
+      siteUrl: connectionQuery.data?.siteUrl || current.siteUrl,
+    }));
+  }, [connectionQuery.data]);
 
   React.useEffect(() => {
     setDrafts(
@@ -104,6 +143,78 @@ export function ClassicEditorWorkspace({
     window.setTimeout(() => setCopyState("idle"), 1800);
   }
 
+  const saveConnectionMutation = useMutation({
+    mutationFn: () =>
+      saveWordPressConnection({
+        data: {
+          projectId,
+          displayName: connectionForm.displayName,
+          siteUrl: connectionForm.siteUrl,
+          sharedSecret: connectionForm.sharedSecret || undefined,
+        },
+      }),
+    onSuccess: () => {
+      setConnectionForm((current) => ({ ...current, sharedSecret: "" }));
+      void connectionQuery.refetch();
+    },
+  });
+
+  const testConnectionMutation = useMutation({
+    mutationFn: () => testWordPressConnection({ data: { projectId } }),
+    onSuccess: () => {
+      void connectionQuery.refetch();
+    },
+  });
+
+  const publishMutation = useMutation({
+    mutationFn: (currentDraft: WordPressClassicPostDraft) =>
+      publishWordPressDraft({
+        data: {
+          projectId,
+          payload: buildClassicEditorPayload(currentDraft),
+        },
+      }),
+    onSuccess: (result, currentDraft) => {
+      const syncedDraft: WordPressClassicPostDraft = {
+        ...currentDraft,
+        sync: {
+          editUrl: getStringProperty(result, "edit_url"),
+          lastSyncStatus: "synced",
+          lastSyncedAt: new Date().toISOString(),
+          wpPostId: getNumberProperty(result, "post_id"),
+        },
+      };
+      setDraft(syncedDraft);
+      setDrafts((current) => upsertClassicEditorDraft(current, syncedDraft));
+    },
+    onError: (error, currentDraft) => {
+      const erroredDraft: WordPressClassicPostDraft = {
+        ...currentDraft,
+        sync: {
+          ...currentDraft.sync,
+          lastSyncError: getStandardErrorMessage(error),
+          lastSyncStatus: "error",
+        },
+      };
+      setDraft(erroredDraft);
+      setDrafts((current) => upsertClassicEditorDraft(current, erroredDraft));
+    },
+  });
+
+  function publishCurrentDraft() {
+    if (!draft || publishMutation.isPending) return;
+    const syncingDraft: WordPressClassicPostDraft = {
+      ...draft,
+      sync: {
+        ...draft.sync,
+        lastSyncError: undefined,
+        lastSyncStatus: "syncing",
+      },
+    };
+    setDraft(syncingDraft);
+    publishMutation.mutate(syncingDraft);
+  }
+
   if (!calendarItem || !contentDraft || !draft) {
     return null;
   }
@@ -139,15 +250,195 @@ export function ClassicEditorWorkspace({
         </div>
 
         <aside className="space-y-4">
+          <WordPressConnectionBox
+            connection={connectionQuery.data}
+            form={connectionForm}
+            isLoading={connectionQuery.isLoading}
+            onFormChange={setConnectionForm}
+            onSave={() => saveConnectionMutation.mutate()}
+            onTest={() => testConnectionMutation.mutate()}
+            saveError={
+              saveConnectionMutation.isError
+                ? getStandardErrorMessage(saveConnectionMutation.error)
+                : ""
+            }
+            savePending={saveConnectionMutation.isPending}
+            testError={
+              testConnectionMutation.isError
+                ? getStandardErrorMessage(testConnectionMutation.error)
+                : ""
+            }
+            testPending={testConnectionMutation.isPending}
+          />
           <ClassicEditorPublishBox
             draft={draft}
+            canPublish={Boolean(connectionQuery.data?.hasSharedSecret)}
             onCopy={() => void copyPayload()}
+            onPublish={publishCurrentDraft}
             onSave={saveLocalDraft}
             onUpdate={updateDraft}
+            publishPending={publishMutation.isPending}
             savedState={savedState}
           />
           <ClassicEditorTaxonomyBox draft={draft} onUpdate={updateDraft} />
         </aside>
+      </div>
+    </section>
+  );
+}
+
+function WordPressConnectionBox({
+  connection,
+  form,
+  isLoading,
+  onFormChange,
+  onSave,
+  onTest,
+  saveError,
+  savePending,
+  testError,
+  testPending,
+}: {
+  connection:
+    | Awaited<ReturnType<typeof getWordPressConnection>>
+    | null
+    | undefined;
+  form: { displayName: string; sharedSecret: string; siteUrl: string };
+  isLoading: boolean;
+  onFormChange: React.Dispatch<
+    React.SetStateAction<{
+      displayName: string;
+      sharedSecret: string;
+      siteUrl: string;
+    }>
+  >;
+  onSave: () => void;
+  onTest: () => void;
+  saveError: string;
+  savePending: boolean;
+  testError: string;
+  testPending: boolean;
+}) {
+  const canTest = Boolean(connection?.hasSharedSecret) && !testPending;
+
+  return (
+    <section className="rounded-md border border-base-300 bg-base-100">
+      <div className="flex items-center gap-2 border-b border-base-300 px-4 py-3 font-semibold">
+        <PlugZap className="size-4 text-primary" />
+        חיבור WordPress
+      </div>
+      <div className="space-y-3 p-4">
+        <label className="form-control">
+          <span className="label pb-1 text-xs text-base-content/60">
+            שם תצוגה
+          </span>
+          <input
+            className="input input-bordered input-sm"
+            value={form.displayName}
+            onChange={(event) =>
+              onFormChange((current) => ({
+                ...current,
+                displayName: event.target.value,
+              }))
+            }
+          />
+        </label>
+        <label className="form-control">
+          <span className="label pb-1 text-xs text-base-content/60">
+            כתובת אתר
+          </span>
+          <input
+            className="input input-bordered input-sm"
+            dir="ltr"
+            placeholder="https://example.com"
+            value={form.siteUrl}
+            onChange={(event) =>
+              onFormChange((current) => ({
+                ...current,
+                siteUrl: event.target.value,
+              }))
+            }
+          />
+        </label>
+        <label className="form-control">
+          <span className="label pb-1 text-xs text-base-content/60">
+            Shared secret
+          </span>
+          <input
+            className="input input-bordered input-sm"
+            type="password"
+            placeholder={
+              connection?.hasSharedSecret ? "קיים, מלא רק כדי להחליף" : ""
+            }
+            value={form.sharedSecret}
+            onChange={(event) =>
+              onFormChange((current) => ({
+                ...current,
+                sharedSecret: event.target.value,
+              }))
+            }
+          />
+        </label>
+
+        {connection ? (
+          <div className="rounded-md border border-base-300 bg-base-200 p-3 text-xs">
+            <div className="flex items-center justify-between gap-2">
+              <span>{connection.displayName}</span>
+              <span
+                className={
+                  connection.lastStatus === "connected"
+                    ? "text-success"
+                    : connection.lastStatus === "failed"
+                      ? "text-error"
+                      : "text-base-content/60"
+                }
+              >
+                {connection.lastStatus === "connected"
+                  ? "מחובר"
+                  : connection.lastStatus === "failed"
+                    ? "נכשל"
+                    : "לא נבדק"}
+              </span>
+            </div>
+            <p className="mt-1 truncate text-base-content/60" dir="ltr">
+              {connection.siteUrl}
+            </p>
+            {connection.lastError ? (
+              <p className="mt-2 text-error">{connection.lastError}</p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {saveError || testError ? (
+          <div className="alert alert-error py-2 text-sm">
+            <span>{saveError || testError}</span>
+          </div>
+        ) : null}
+
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            className="btn btn-outline btn-sm"
+            disabled={isLoading || savePending}
+            onClick={onSave}
+            type="button"
+          >
+            {savePending ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : null}
+            שמור
+          </button>
+          <button
+            className="btn btn-primary btn-sm"
+            disabled={!canTest}
+            onClick={onTest}
+            type="button"
+          >
+            {testPending ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : null}
+            בדוק חיבור
+          </button>
+        </div>
       </div>
     </section>
   );
@@ -272,18 +563,24 @@ function ClassicEditorContentPanel({
 }
 
 function ClassicEditorPublishBox({
+  canPublish,
   draft,
   onCopy,
+  onPublish,
   onSave,
   onUpdate,
+  publishPending,
   savedState,
 }: {
+  canPublish: boolean;
   draft: WordPressClassicPostDraft;
   onCopy: () => void;
+  onPublish: () => void;
   onSave: () => void;
   onUpdate: (
     updater: (current: WordPressClassicPostDraft) => WordPressClassicPostDraft,
   ) => void;
+  publishPending: boolean;
   savedState: "idle" | "saved";
 }) {
   return (
@@ -362,10 +659,48 @@ function ClassicEditorPublishBox({
           )}
           {savedState === "saved" ? "נשמר מקומית" : "שמירה מקומית"}
         </button>
-        <button className="btn btn-primary btn-sm w-full gap-2" onClick={onCopy}>
-          <Clipboard className="size-4" />
-          העתק payload לתוסף
+        <button
+          className="btn btn-primary btn-sm w-full gap-2"
+          disabled={!canPublish || publishPending}
+          onClick={onPublish}
+          type="button"
+        >
+          {publishPending || draft.sync.lastSyncStatus === "syncing" ? (
+            <span className="loading loading-spinner loading-xs" />
+          ) : (
+            <Send className="size-4" />
+          )}
+          שלח לוורדפרס
         </button>
+        <button
+          className="btn btn-outline btn-sm w-full gap-2"
+          onClick={onCopy}
+          type="button"
+        >
+          <Clipboard className="size-4" />
+          העתק payload
+        </button>
+        {draft.sync.lastSyncStatus === "synced" ? (
+          <div className="rounded-md border border-success/30 bg-success/10 p-3 text-sm">
+            <p className="text-success">הטיוטה נשלחה לוורדפרס.</p>
+            {draft.sync.editUrl ? (
+              <a
+                className="mt-2 inline-flex items-center gap-1 text-primary underline"
+                href={draft.sync.editUrl}
+                rel="noreferrer"
+                target="_blank"
+              >
+                פתח בוורדפרס
+                <ExternalLink className="size-3" />
+              </a>
+            ) : null}
+          </div>
+        ) : null}
+        {draft.sync.lastSyncStatus === "error" && draft.sync.lastSyncError ? (
+          <div className="rounded-md border border-error/30 bg-error/10 p-3 text-sm text-error">
+            {draft.sync.lastSyncError}
+          </div>
+        ) : null}
       </div>
     </section>
   );

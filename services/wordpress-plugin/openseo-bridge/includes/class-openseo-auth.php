@@ -12,7 +12,7 @@ final class OpenSEO_Auth
         if ($secret === '') {
             return new WP_Error(
                 'openseo_secret_missing',
-                'OpenSEO Bridge secret is not configured.',
+                'Lenux28 SEO Bridge secret is not configured.',
                 ['status' => 403]
             );
         }
@@ -21,7 +21,7 @@ final class OpenSEO_Auth
         if ($provided === '' || !hash_equals($secret, $provided)) {
             return new WP_Error(
                 'openseo_secret_invalid',
-                'OpenSEO Bridge secret is invalid.',
+                'Lenux28 SEO Bridge secret is invalid.',
                 ['status' => 401]
             );
         }

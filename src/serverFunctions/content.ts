@@ -1,10 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { ContentWriterService } from "@/server/features/content/services/ContentWriterService";
+import { WordPressBridgeService } from "@/server/features/content/services/WordPressBridgeService";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
   generateContentDraftSchema,
   getContentDraftSchema,
   getContentWriterStatusSchema,
+  getWordPressConnectionSchema,
+  publishWordPressDraftSchema,
+  saveWordPressConnectionSchema,
+  testWordPressConnectionSchema,
 } from "@/types/schemas/content";
 
 export const getContentWriterStatus = createServerFn({ method: "POST" })
@@ -31,4 +36,32 @@ export const getContentDraft = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => getContentDraftSchema.parse(data))
   .handler(async ({ context, data }) =>
     ContentWriterService.getDraft(context.projectId, data.draftId),
+  );
+
+export const getWordPressConnection = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .inputValidator((data: unknown) => getWordPressConnectionSchema.parse(data))
+  .handler(async ({ context }) =>
+    WordPressBridgeService.getConnection(context.projectId),
+  );
+
+export const saveWordPressConnection = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .inputValidator((data: unknown) => saveWordPressConnectionSchema.parse(data))
+  .handler(async ({ context, data }) =>
+    WordPressBridgeService.saveConnection(context, data),
+  );
+
+export const testWordPressConnection = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .inputValidator((data: unknown) => testWordPressConnectionSchema.parse(data))
+  .handler(async ({ context }) =>
+    WordPressBridgeService.testConnection(context.projectId),
+  );
+
+export const publishWordPressDraft = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .inputValidator((data: unknown) => publishWordPressDraftSchema.parse(data))
+  .handler(async ({ context, data }) =>
+    WordPressBridgeService.publishDraft(context.projectId, data.payload),
   );

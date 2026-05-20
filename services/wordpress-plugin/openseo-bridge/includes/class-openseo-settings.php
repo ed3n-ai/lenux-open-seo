@@ -27,8 +27,8 @@ final class OpenSEO_Settings
     public static function register_page(): void
     {
         add_options_page(
-            'OpenSEO Bridge',
-            'OpenSEO Bridge',
+            'Lenux28 SEO Bridge',
+            'Lenux28 SEO Bridge',
             'manage_options',
             'openseo-bridge',
             [self::class, 'render_page']
@@ -42,8 +42,8 @@ final class OpenSEO_Settings
         }
         ?>
         <div class="wrap">
-            <h1>OpenSEO Bridge</h1>
-            <p>Configure the shared secret used by OpenSEO when sending drafts to WordPress.</p>
+            <h1>Lenux28 SEO Bridge</h1>
+            <p>Configure the shared secret used by Lenux28 SEO when sending drafts to WordPress.</p>
             <form method="post" action="options.php">
                 <?php settings_fields('openseo_bridge'); ?>
                 <table class="form-table" role="presentation">
@@ -61,6 +61,19 @@ final class OpenSEO_Settings
                                 autocomplete="new-password"
                             />
                             <p class="description">Send this value in the x-openseo-secret header.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Endpoint</th>
+                        <td>
+                            <code><?php echo esc_html(rest_url('openseo/v1/posts/upsert')); ?></code>
+                            <p class="description">Use this endpoint in the Lenux28 SEO WordPress connection.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Health check</th>
+                        <td>
+                            <code><?php echo esc_html(rest_url('openseo/v1/health')); ?></code>
                         </td>
                     </tr>
                 </table>
