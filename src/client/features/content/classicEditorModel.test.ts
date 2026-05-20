@@ -104,6 +104,29 @@ describe("classicEditorModel", () => {
     });
   });
 
+  test("omits post taxonomies when the WordPress target is a page", () => {
+    const draft = createClassicEditorDraft({
+      calendarItem,
+      contentDraft: {
+        content: "תוכן עמוד",
+        id: "ai-draft-1",
+        title: "עמוד שירות",
+      },
+    });
+
+    const payload = buildClassicEditorPayload({
+      ...draft,
+      publish: {
+        ...draft.publish,
+        postType: "page",
+      },
+    });
+
+    expect(payload.post_type).toBe("page");
+    expect(payload.categories).toEqual([]);
+    expect(payload.tags).toEqual([]);
+  });
+
   test("parses stored drafts defensively and upserts by local draft id", () => {
     const draft = createClassicEditorDraft({
       calendarItem,

@@ -173,8 +173,10 @@ function escapeTextForHtml(value: string) {
 export function buildClassicEditorPayload(
   draft: WordPressClassicPostDraft,
 ): ClassicEditorPayload {
+  const isPage = draft.publish.postType === "page";
+
   return {
-    categories: draft.taxonomy.categories,
+    categories: isPage ? [] : draft.taxonomy.categories,
     content_html: draft.editor.contentHtml.trim(),
     excerpt: draft.editor.excerpt.trim(),
     external_id: draft.identity.externalId,
@@ -182,7 +184,7 @@ export function buildClassicEditorPayload(
     scheduled_at: draft.publish.scheduledAt ?? "",
     slug: normalizeClassicEditorSlug(draft.editor.slug || draft.editor.title),
     status: draft.publish.status,
-    tags: draft.taxonomy.tags,
+    tags: isPage ? [] : draft.taxonomy.tags,
     title: draft.editor.title.trim(),
     yoast: {
       canonical: draft.yoast.canonical.trim(),

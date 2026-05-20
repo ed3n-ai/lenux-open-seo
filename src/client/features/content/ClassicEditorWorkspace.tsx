@@ -271,8 +271,9 @@ export function ClassicEditorWorkspace({
             testPending={testConnectionMutation.isPending}
           />
           <ClassicEditorPublishBox
-            draft={draft}
             canPublish={Boolean(connectionQuery.data?.hasSharedSecret)}
+            connection={connectionQuery.data}
+            draft={draft}
             onCopy={() => void copyPayload()}
             onPublish={publishCurrentDraft}
             onSave={saveLocalDraft}
@@ -280,7 +281,11 @@ export function ClassicEditorWorkspace({
             publishPending={publishMutation.isPending}
             savedState={savedState}
           />
-          <ClassicEditorTaxonomyBox draft={draft} onUpdate={updateDraft} />
+          {draft.publish.postType === "post" ? (
+            <ClassicEditorTaxonomyBox draft={draft} onUpdate={updateDraft} />
+          ) : (
+            <ClassicEditorPageTargetBox />
+          )}
         </aside>
       </div>
     </section>
@@ -564,6 +569,7 @@ function ClassicEditorContentPanel({
 
 function ClassicEditorPublishBox({
   canPublish,
+  connection,
   draft,
   onCopy,
   onPublish,
@@ -573,6 +579,10 @@ function ClassicEditorPublishBox({
   savedState,
 }: {
   canPublish: boolean;
+  connection:
+    | Awaited<ReturnType<typeof getWordPressConnection>>
+    | null
+    | undefined;
   draft: WordPressClassicPostDraft;
   onCopy: () => void;
   onPublish: () => void;
@@ -583,12 +593,55 @@ function ClassicEditorPublishBox({
   publishPending: boolean;
   savedState: "idle" | "saved";
 }) {
+  const postTypeLabel = draft.publish.postType === "page" ? "עמוד" : "פוסט";
+  const statusLabel = draft.publish.status === "pending" ? "ממתין לאישור" : "טיוטה";
+  const targetSite = connection?.siteUrl || "לא הוגדר אתר";
+  const targetStatus =
+    connection?.lastStatus === "connected"
+      ? "מחובר"
+      : connection?.lastStatus === "failed"
+        ? "נכשל"
+        : connection?.hasSharedSecret
+          ? "לא נבדק"
+          : "לא מחובר";
+
   return (
     <section className="rounded-md border border-base-300 bg-base-100">
       <div className="border-b border-base-300 px-4 py-3 font-semibold">
         פרסום
       </div>
       <div className="space-y-3 p-4">
+        <div>
+          <span className="label pb-1 text-xs text-base-content/60">
+            יעד פרסום
+          </span>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              className={`btn btn-sm ${draft.publish.postType === "post" ? "btn-primary" : "btn-outline"}`}
+              onClick={() =>
+                onUpdate((current) => ({
+                  ...current,
+                  publish: { ...current.publish, postType: "post" },
+                }))
+              }
+              type="button"
+            >
+              פוסט
+            </button>
+            <button
+              className={`btn btn-sm ${draft.publish.postType === "page" ? "btn-primary" : "btn-outline"}`}
+              onClick={() =>
+                onUpdate((current) => ({
+                  ...current,
+                  publish: { ...current.publish, postType: "page" },
+                }))
+              }
+              type="button"
+            >
+              עמוד
+            </button>
+          </div>
+        </div>
         <label className="form-control">
           <span className="label pb-1 text-xs text-base-content/60">
             סטטוס יעד
@@ -607,29 +660,8 @@ function ClassicEditorPublishBox({
               }))
             }
           >
-            <option value="draft">draft</option>
-            <option value="pending">pending</option>
-          </select>
-        </label>
-        <label className="form-control">
-          <span className="label pb-1 text-xs text-base-content/60">
-            סוג תוכן
-          </span>
-          <select
-            className="select select-bordered select-sm"
-            value={draft.publish.postType}
-            onChange={(event) =>
-              onUpdate((current) => ({
-                ...current,
-                publish: {
-                  ...current.publish,
-                  postType: event.target.value === "page" ? "page" : "post",
-                },
-              }))
-            }
-          >
-            <option value="post">פוסט</option>
-            <option value="page">עמוד</option>
+            <option value="draft">טיוטה</option>
+            <option value="pending">ממתין לאישור</option>
           </select>
         </label>
         <label className="form-control">
@@ -651,6 +683,40 @@ function ClassicEditorPublishBox({
             }
           />
         </label>
+        <div className="rounded-md border border-base-300 bg-base-200 p-3 text-xs leading-5">
+          <p className="font-medium text-base-content">סיכום לפני שליחה</p>
+          <dl className="mt-2 space-y-1">
+            <div className="flex justify-between gap-3">
+              <dt className="text-base-content/60">אתר</dt>
+              <dd className="max-w-44 truncate text-left" dir="ltr">
+                {targetSite}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-base-content/60">חיבור</dt>
+              <dd>{targetStatus}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-base-content/60">סוג תוכן</dt>
+              <dd>{postTypeLabel}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-base-content/60">סטטוס</dt>
+              <dd>{statusLabel}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-base-content/60">Slug</dt>
+              <dd className="max-w-44 truncate text-left" dir="ltr">
+                {draft.editor.slug}
+              </dd>
+            </div>
+          </dl>
+          {draft.publish.postType === "page" ? (
+            <p className="mt-2 text-base-content/60">
+              עמודים נשלחים ללא קטגוריות ותגיות.
+            </p>
+          ) : null}
+        </div>
         <button className="btn btn-outline btn-sm w-full gap-2" onClick={onSave}>
           {savedState === "saved" ? (
             <Check className="size-4" />
@@ -701,6 +767,22 @@ function ClassicEditorPublishBox({
             {draft.sync.lastSyncError}
           </div>
         ) : null}
+      </div>
+    </section>
+  );
+}
+
+function ClassicEditorPageTargetBox() {
+  return (
+    <section className="rounded-md border border-base-300 bg-base-100">
+      <div className="border-b border-base-300 px-4 py-3 font-semibold">
+        הגדרות עמוד
+      </div>
+      <div className="space-y-2 p-4 text-sm text-base-content/70">
+        <p>היעד הנוכחי הוא עמוד WordPress.</p>
+        <p>
+          קטגוריות ותגיות לא יישלחו. בהמשך ניתן להוסיף בחירת עמוד אב ותבנית.
+        </p>
       </div>
     </section>
   );

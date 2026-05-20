@@ -50,8 +50,10 @@ final class OpenSEO_Post_Mapper
         }
 
         update_post_meta($post_id, '_openseo_external_id', $external_id);
-        self::assign_terms($post_id, (array) ($payload['categories'] ?? []), 'category');
-        self::assign_terms($post_id, (array) ($payload['tags'] ?? []), 'post_tag');
+        if ($post_type === 'post') {
+            self::assign_terms($post_id, (array) ($payload['categories'] ?? []), 'category');
+            self::assign_terms($post_id, (array) ($payload['tags'] ?? []), 'post_tag');
+        }
         OpenSEO_Yoast_Adapter::save($post_id, self::yoast_payload($payload));
 
         return [
