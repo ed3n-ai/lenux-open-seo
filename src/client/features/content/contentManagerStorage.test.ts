@@ -25,7 +25,7 @@ describe("contentManagerStorage", () => {
       tone: "מקצועי",
     });
 
-    expect(ideas).toHaveLength(3);
+    expect(ideas).toHaveLength(9);
     expect(ideas[0]).toMatchObject({
       primaryKeyword: "מחקר מילות מפתח",
       contentType: "מדריך",
@@ -43,7 +43,7 @@ describe("contentManagerStorage", () => {
       tone: "ברור",
     });
 
-    expect(addUniqueIdeas([ideas[0]], ideas)).toHaveLength(3);
+    expect(addUniqueIdeas([ideas[0]], ideas)).toHaveLength(9);
   });
 
   test("creates a planned calendar item from an idea", () => {
