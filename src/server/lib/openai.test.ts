@@ -14,20 +14,22 @@ describe("generateOpenAIContentDraft", () => {
   beforeEach(() => {
     process.env.OPENAI_API_KEY = "test-openai-key";
     delete process.env.OPENAI_CONTENT_MODEL;
+    delete process.env.OPENAI_CONTENT_REASONING_EFFORT;
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
     delete process.env.OPENAI_API_KEY;
     delete process.env.OPENAI_CONTENT_MODEL;
+    delete process.env.OPENAI_CONTENT_REASONING_EFFORT;
   });
 
   test("calls the Responses API with structured output and parses the draft", async () => {
     const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
       const body = JSON.parse(String(init?.body));
-      expect(body.model).toBe("gpt-5");
+      expect(body.model).toBe("gpt-5.2");
       expect(body.max_output_tokens).toBe(8000);
-      expect(body.reasoning.effort).toBe("minimal");
+      expect(body.reasoning.effort).toBe("medium");
       expect(body.text.format.type).toBe("json_schema");
       expect(body.text.format.strict).toBe(true);
       expect(body.input[1].content).toContain(
@@ -63,6 +65,34 @@ describe("generateOpenAIContentDraft", () => {
         method: "POST",
       }),
     );
+  });
+
+  test("allows model and reasoning effort overrides", async () => {
+    process.env.OPENAI_CONTENT_MODEL = "gpt-5.2-pro";
+    process.env.OPENAI_CONTENT_REASONING_EFFORT = "high";
+
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body));
+      expect(body.model).toBe("gpt-5.2-pro");
+      expect(body.reasoning.effort).toBe("high");
+
+      return new Response(
+        JSON.stringify({ output_text: JSON.stringify(draftPayload) }),
+        { status: 200 },
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await generateOpenAIContentDraft({
+      keywords: ["ראיית חשבון"],
+      language: "he",
+      projectId: "project-1",
+      targetWords: 1000,
+      tone: "expert",
+      topic: "מדריך מקצועי לראיית חשבון לעסקים",
+    });
+
+    expect(fetchMock).toHaveBeenCalledOnce();
   });
 
   test("throws a product error when the OpenAI key is missing", async () => {

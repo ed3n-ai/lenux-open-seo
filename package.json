@@ -48,7 +48,10 @@
         "description": "OpenAI API key used by the content writer."
       },
       "OPENAI_CONTENT_MODEL": {
-        "description": "Optional OpenAI model override for content generation. Defaults to gpt-5."
+        "description": "Optional OpenAI model override for content generation. Defaults to gpt-5.2."
+      },
+      "OPENAI_CONTENT_REASONING_EFFORT": {
+        "description": "Optional reasoning effort override for content generation. Defaults to medium."
       }
     }
   },

@@ -13,7 +13,8 @@
 		"AUTH_MODE": "cloudflare_access",
 		"TEAM_DOMAIN": "https://lenux28.cloudflareaccess.com",
 		"POLICY_AUD": "02658f24aad054ef41701ae807642754886abff3af7b6e1308591e4fe790f3d9",
-		"OPENAI_CONTENT_MODEL": "gpt-5-2025-08-07",
+		"OPENAI_CONTENT_MODEL": "gpt-5.2",
+		"OPENAI_CONTENT_REASONING_EFFORT": "medium",
 	},
 	"routes": [
 		{

@@ -4,8 +4,10 @@ import { AppError } from "@/server/lib/errors";
 import { getEnvValue, getRequiredEnvValue } from "@/server/lib/runtime-env";
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
-const DEFAULT_CONTENT_MODEL = "gpt-5";
+const DEFAULT_CONTENT_MODEL = "gpt-5.2";
+const DEFAULT_REASONING_EFFORT = "medium";
 const MAX_ERROR_BODY_LENGTH = 1200;
+const reasoningEffortSchema = z.enum(["minimal", "low", "medium", "high"]);
 
 const openAIContentDraftSchema = z.object({
   focusKeyphrase: z.string().trim().min(1).max(120),
@@ -98,6 +100,11 @@ async function getContentModel() {
   return (await getEnvValue("OPENAI_CONTENT_MODEL")) ?? DEFAULT_CONTENT_MODEL;
 }
 
+async function getContentReasoningEffort() {
+  const value = await getEnvValue("OPENAI_CONTENT_REASONING_EFFORT");
+  return reasoningEffortSchema.catch(DEFAULT_REASONING_EFFORT).parse(value);
+}
+
 export async function generateOpenAIContentDraft(
   input: GenerateContentDraftInput,
 ): Promise<OpenAIContentDraft> {
@@ -124,7 +131,7 @@ export async function generateOpenAIContentDraft(
       max_output_tokens: Math.min(12000, Math.max(6000, input.targetWords * 8)),
       model: await getContentModel(),
       reasoning: {
-        effort: "minimal",
+        effort: await getContentReasoningEffort(),
       },
       text: {
         format: {

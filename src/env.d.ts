@@ -17,6 +17,7 @@ declare namespace Cloudflare {
     DATAFORSEO_API_KEY: string;
     OPENAI_API_KEY?: string;
     OPENAI_CONTENT_MODEL?: string;
+    OPENAI_CONTENT_REASONING_EFFORT?: "minimal" | "low" | "medium" | "high";
   }
 }
 
