@@ -7,6 +7,8 @@ vi.mock("@/server/features/content/repositories/ContentRepository", () => ({
   ContentRepository: {
     addUsage: vi.fn(),
     createDraft: vi.fn(),
+    deleteDraft: vi.fn(),
+    getDraft: vi.fn(),
     getUsage: vi.fn(),
     listRecentDrafts: vi.fn(),
   },
@@ -27,6 +29,8 @@ describe("ContentWriterService", () => {
   beforeEach(() => {
     vi.mocked(ContentRepository.addUsage).mockReset();
     vi.mocked(ContentRepository.createDraft).mockReset();
+    vi.mocked(ContentRepository.deleteDraft).mockReset();
+    vi.mocked(ContentRepository.getDraft).mockReset();
     vi.mocked(ContentRepository.getUsage).mockReset();
     vi.mocked(ContentRepository.listRecentDrafts).mockReset();
     vi.mocked(generateOpenAIContentDraft).mockReset();
@@ -101,5 +105,33 @@ describe("ContentWriterService", () => {
     });
 
     expect(generateOpenAIContentDraft).not.toHaveBeenCalled();
+  });
+
+  test("deletes an existing draft from the project", async () => {
+    vi.mocked(ContentRepository.getDraft).mockResolvedValue({
+      audience: "כללי",
+      content: "תוכן",
+      createdAt: "2026-05-27T00:00:00.000Z",
+      focusKeyphrase: "SEO",
+      id: "draft-1",
+      keywordsJson: "[]",
+      metaDescription: "",
+      organizationId: "org-1",
+      projectId: "project-1",
+      seoTitle: "",
+      title: "טיוטה",
+      tone: "clear",
+      topic: "טיוטה",
+      wordCount: 100,
+    });
+
+    await expect(
+      ContentWriterService.deleteDraft("project-1", "draft-1"),
+    ).resolves.toEqual({ deleted: true });
+
+    expect(ContentRepository.deleteDraft).toHaveBeenCalledWith(
+      "project-1",
+      "draft-1",
+    );
   });
 });

@@ -74,6 +74,14 @@ async function getDraft(projectId: string, draftId: string) {
   });
 }
 
+async function deleteDraft(projectId: string, draftId: string) {
+  await db
+    .delete(contentDrafts)
+    .where(
+      and(eq(contentDrafts.projectId, projectId), eq(contentDrafts.id, draftId)),
+    );
+}
+
 async function listRecentDrafts(projectId: string) {
   return db.query.contentDrafts.findMany({
     where: eq(contentDrafts.projectId, projectId),
@@ -85,6 +93,7 @@ async function listRecentDrafts(projectId: string) {
 export const ContentRepository = {
   addUsage,
   createDraft,
+  deleteDraft,
   getDraft,
   getUsage,
   listRecentDrafts,

@@ -131,6 +131,16 @@ async function getDraft(projectId: string, draftId: string) {
   };
 }
 
+async function deleteDraft(projectId: string, draftId: string) {
+  const row = await ContentRepository.getDraft(projectId, draftId);
+  if (!row) {
+    throw new AppError("NOT_FOUND");
+  }
+
+  await ContentRepository.deleteDraft(projectId, draftId);
+  return { deleted: true };
+}
+
 async function listRecentDrafts(projectId: string) {
   const rows = await ContentRepository.listRecentDrafts(projectId);
   return rows.map((row) => ({
@@ -142,6 +152,7 @@ async function listRecentDrafts(projectId: string) {
 }
 
 export const ContentWriterService = {
+  deleteDraft,
   generateDraft,
   getDraft,
   getUsageSummary,

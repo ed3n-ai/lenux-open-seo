@@ -177,6 +177,9 @@ function CommunityDashboardPage() {
                     : "/p/$projectId/keywords"
                 }
                 params={{ projectId }}
+                search={
+                  role === "content-manager" ? { view: "ideas" } : undefined
+                }
                 className="btn btn-primary gap-2"
               >
                 {role === "content-manager"
@@ -303,6 +306,7 @@ function ContentManagerDashboard({ projectId }: { projectId: string }) {
         body="פתחו כתיבה ממוקדת לפי נושא, טון, מילות מפתח ויעד מילים."
         icon={Sparkles}
         to="/p/$projectId/ai"
+        search={{ view: "writer" }}
         projectId={projectId}
       />
       <WorkflowToolCard
@@ -310,6 +314,7 @@ function ContentManagerDashboard({ projectId }: { projectId: string }) {
         body="שמרו נושאים לעבודה והפכו אותם לפריטים ביומן התוכן."
         icon={Lightbulb}
         to="/p/$projectId/ai"
+        search={{ view: "saved-ideas" }}
         projectId={projectId}
       />
       <WorkflowToolCard
@@ -317,6 +322,7 @@ function ContentManagerDashboard({ projectId }: { projectId: string }) {
         body="נהלו סטטוסים ותאריכי יעד, ואז עברו מהיומן לטיוטה."
         icon={CalendarDays}
         to="/p/$projectId/ai"
+        search={{ view: "weekly-plan" }}
         projectId={projectId}
       />
       <WorkflowToolCard
@@ -369,6 +375,7 @@ type DashboardTool = {
     | "/p/$projectId/backlinks"
     | "/p/$projectId/audit";
   projectId: string;
+  search?: { view?: "ideas" | "saved-ideas" | "weekly-plan" | "writer" };
 };
 
 function WorkflowToolCard({
@@ -377,6 +384,7 @@ function WorkflowToolCard({
   body,
   description,
   icon: Icon,
+  search,
   to,
   projectId,
 }: DashboardTool) {
@@ -384,6 +392,7 @@ function WorkflowToolCard({
     <Link
       to={to}
       params={{ projectId }}
+      search={search}
       className="group rounded-lg border border-base-300 bg-base-100 p-5 transition-colors hover:border-primary/50 hover:bg-base-100/80"
     >
       <span className="flex size-10 items-center justify-center rounded-lg bg-base-200 text-base-content/70 group-hover:text-primary">

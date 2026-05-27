@@ -2,7 +2,10 @@ import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
 import { ClassicEditorWorkspace } from "@/client/features/content/ClassicEditorWorkspace";
-import { ContentManagerWorkspace } from "@/client/features/content/ContentManagerWorkspace";
+import {
+  ContentManagerWorkspace,
+  type ContentManagerView,
+} from "@/client/features/content/ContentManagerWorkspace";
 import {
   ContentWriterPanel,
   type ContentWriterDraftResult,
@@ -15,11 +18,24 @@ import { createCalendarItemFromDraft } from "@/client/features/content/contentMa
 import { useSession } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_project/p/$projectId/ai")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    view: parseContentManagerView(search.view),
+  }),
   component: AiPage,
 });
 
+function parseContentManagerView(value: unknown): ContentManagerView {
+  return value === "ideas" ||
+    value === "saved-ideas" ||
+    value === "weekly-plan" ||
+    value === "writer"
+    ? value
+    : "overview";
+}
+
 function AiPage() {
   const { projectId } = Route.useParams();
+  const { view } = Route.useSearch();
   const { data: session } = useSession();
   const userKey = session?.user?.id ?? session?.user?.email ?? "local-user";
   const writerRef = React.useRef<HTMLDivElement | null>(null);
@@ -84,6 +100,7 @@ function AiPage() {
         <ContentManagerWorkspace
           projectId={projectId}
           userKey={userKey}
+          view={view}
           onDraftRequest={requestDraft}
         />
 

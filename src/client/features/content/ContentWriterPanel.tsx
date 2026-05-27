@@ -1,7 +1,8 @@
 import * as React from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Check, Clipboard, FileText, Sparkles } from "lucide-react";
+import { Check, Clipboard, FileText, Sparkles, Trash2 } from "lucide-react";
 import {
+  deleteContentDraft,
   generateContentDraft,
   getContentDraft,
   getContentWriterStatus,
@@ -117,6 +118,17 @@ export function ContentWriterPanel({
       setDraft(result);
       onRecentDraftLoaded?.(result);
       setCopyState("idle");
+    },
+  });
+
+  const deleteDraftMutation = useMutation({
+    mutationFn: (draftId: string) =>
+      deleteContentDraft({ data: { projectId, draftId } }),
+    onSuccess: (_result, draftId) => {
+      if (draft?.id === draftId) {
+        setDraft(null);
+      }
+      void statusQuery.refetch();
     },
   });
 
@@ -364,26 +376,41 @@ export function ContentWriterPanel({
         <div className="mt-5 border-t border-base-300 pt-4">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-sm font-medium">טיוטות אחרונות</h3>
-            {loadDraftMutation.isError ? (
+            {loadDraftMutation.isError || deleteDraftMutation.isError ? (
               <span className="text-xs text-error">
-                {getStandardErrorMessage(loadDraftMutation.error)}
+                {getStandardErrorMessage(
+                  loadDraftMutation.error ?? deleteDraftMutation.error,
+                )}
               </span>
             ) : null}
           </div>
           <div className="mt-3 grid gap-2 md:grid-cols-2">
             {statusQuery.data.drafts.map((item) => (
-              <button
+              <div
                 key={item.id}
-                type="button"
-                className="rounded-lg border border-base-300 bg-base-200 p-3 text-start transition-colors hover:border-primary/60 disabled:cursor-wait disabled:opacity-70"
-                disabled={loadDraftMutation.isPending}
-                onClick={() => loadDraftMutation.mutate(item.id)}
+                className="flex items-start gap-2 rounded-lg border border-base-300 bg-base-200 p-3 transition-colors hover:border-primary/60"
               >
-                <p className="text-sm font-medium">{item.title}</p>
-                <p className="mt-1 text-xs text-base-content/60">
-                  {item.wordCount} מילים · {item.createdAt}
-                </p>
-              </button>
+                <button
+                  type="button"
+                  className="min-w-0 flex-1 text-start disabled:cursor-wait disabled:opacity-70"
+                  disabled={loadDraftMutation.isPending}
+                  onClick={() => loadDraftMutation.mutate(item.id)}
+                >
+                  <p className="text-sm font-medium">{item.title}</p>
+                  <p className="mt-1 text-xs text-base-content/60">
+                    {item.wordCount} מילים · {item.createdAt}
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-square btn-ghost btn-sm text-base-content/50 hover:text-error"
+                  disabled={deleteDraftMutation.isPending}
+                  title="מחק טיוטה"
+                  onClick={() => deleteDraftMutation.mutate(item.id)}
+                >
+                  <Trash2 className="size-4" />
+                </button>
+              </div>
             ))}
           </div>
         </div>

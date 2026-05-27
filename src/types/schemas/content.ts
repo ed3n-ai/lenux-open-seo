@@ -11,6 +11,11 @@ export const getContentDraftSchema = z.object({
   draftId: z.string().min(1),
 });
 
+export const deleteContentDraftSchema = z.object({
+  projectId: z.string().min(1),
+  draftId: z.string().min(1),
+});
+
 export const generateContentDraftSchema = z.object({
   projectId: z.string().min(1),
   topic: z.string().trim().min(3).max(180),
@@ -67,6 +72,7 @@ export const publishWordPressDraftSchema = z.object({
 export type GenerateContentDraftInput = z.infer<
   typeof generateContentDraftSchema
 >;
+export type DeleteContentDraftInput = z.infer<typeof deleteContentDraftSchema>;
 export type GetContentDraftInput = z.infer<typeof getContentDraftSchema>;
 export type GetContentWriterStatusInput = z.infer<
   typeof getContentWriterStatusSchema
