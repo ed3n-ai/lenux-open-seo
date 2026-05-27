@@ -1,12 +1,14 @@
 import type { EnsuredUserContext } from "@/middleware/ensure-user/types";
 import { AUTUMN_PAID_PLAN_FEATURE_ID } from "@/shared/billing";
 import { autumn } from "@/server/billing/autumn";
+import { isSuperAdminContext } from "@/server/auth/access-control";
 import { AppError } from "@/server/lib/errors";
 
 export type BillingCustomerContext = Pick<
   EnsuredUserContext,
   "organizationId" | "userEmail" | "userId"
 > & {
+  isSuperAdmin?: boolean;
   projectId?: string;
 };
 
@@ -35,4 +37,8 @@ export async function customerHasPaidPlan(customerId: string) {
   });
 
   return result.allowed;
+}
+
+export function customerBypassesBilling(context: BillingCustomerContext) {
+  return isSuperAdminContext(context);
 }

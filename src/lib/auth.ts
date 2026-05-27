@@ -5,6 +5,10 @@ import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { db } from "@/db";
 import { z } from "zod";
 import { baseAuthConfig } from "@/lib/auth-config";
+import {
+  isAllowedUserEmail,
+  isSuperAdminEmail,
+} from "@/server/auth/access-control";
 import { getOrCreateDefaultHostedOrganization } from "@/server/auth/default-hosted-organization";
 import {
   sendHostedPasswordResetEmail,
@@ -111,20 +115,8 @@ function getTrustedOrigins(baseUrl: string) {
   return trustedOrigins;
 }
 
-function parseAllowedEmails(value: string | undefined) {
-  return new Set(
-    (value ?? "")
-      .split(/[,\n;]/)
-      .map((email) => email.trim().toLowerCase())
-      .filter(Boolean),
-  );
-}
-
 function assertHostedUserEmailAllowed(userEmail: string) {
-  const allowedEmails = parseAllowedEmails(env.ALLOWED_USER_EMAILS);
-  if (allowedEmails.size === 0) return;
-
-  if (!allowedEmails.has(userEmail.trim().toLowerCase())) {
+  if (!isSuperAdminEmail(userEmail) && !isAllowedUserEmail(userEmail)) {
     throw new Error("This email is not allowed to access Lenux28 SEO.");
   }
 }

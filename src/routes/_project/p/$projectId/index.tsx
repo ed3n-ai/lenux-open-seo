@@ -88,6 +88,12 @@ function CommunityDashboardPage() {
     },
   });
   const role = projectQuery.data?.workflowRole ?? null;
+  const isSuperAdmin = projectQuery.data?.isSuperAdmin === true;
+  const roleBadgeLabel = isSuperAdmin
+    ? "מנהל מערכת"
+    : role
+      ? roleLabels[role]
+      : "";
 
   function chooseRole(nextRole: ContentWorkflowRole) {
     chooseRoleMutation.mutate(nextRole);
@@ -103,7 +109,7 @@ function CommunityDashboardPage() {
     );
   }
 
-  if (!role) {
+  if (!role && !isSuperAdmin) {
     return (
       <main className="h-full overflow-auto bg-base-200 px-4 py-6 md:px-6 lg:px-8">
         <div className="mx-auto flex max-w-5xl flex-col gap-5">
@@ -158,15 +164,19 @@ function CommunityDashboardPage() {
                 <span className="badge badge-primary badge-outline">
                   OpenSEO Community Edition
                 </span>
-                <span className="badge badge-ghost">{roleLabels[role]}</span>
+                <span className="badge badge-ghost">{roleBadgeLabel}</span>
               </div>
               <h1 className="mt-3 text-3xl font-semibold tracking-tight text-base-content">
-                {role === "content-manager"
+                {isSuperAdmin
+                  ? "מרכז עבודה מלא"
+                  : role === "content-manager"
                   ? "מרכז עבודה למנהל תוכן"
                   : "מרכז עבודה לאיש SEO"}
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-base-content/70">
-                {role === "content-manager"
+                {isSuperAdmin
+                  ? "כל יכולות ניהול התוכן וה-SEO פתוחות במצב מנהל, ללא בחירת מסלול וללא מגבלות תשלום."
+                  : role === "content-manager"
                   ? "התחילו ברעיון, שמרו נושאים טובים, תכננו אותם ביומן, צרו טיוטה, והכינו payload מסודר ל-WordPress עם Yoast."
                   : "התחילו ממחקר, עקבו אחרי תנועה ודירוגים, בדקו את הדומיין, וטפלו בבעיות טכניות בצורה מדידה."}
               </p>
@@ -174,17 +184,19 @@ function CommunityDashboardPage() {
             <div className="flex flex-wrap gap-2">
               <Link
                 to={
-                  role === "content-manager"
+                  role === "content-manager" || isSuperAdmin
                     ? "/p/$projectId/ai"
                     : "/p/$projectId/keywords"
                 }
                 params={{ projectId }}
                 search={
-                  role === "content-manager" ? { view: "ideas" } : undefined
+                  role === "content-manager" || isSuperAdmin
+                    ? { view: "ideas" }
+                    : undefined
                 }
                 className="btn btn-primary gap-2"
               >
-                {role === "content-manager"
+                {role === "content-manager" || isSuperAdmin
                   ? "צור רעיונות לתוכן"
                   : "התחל מחקר מילות מפתח"}
                 <ArrowRight className="size-4" />
@@ -193,13 +205,18 @@ function CommunityDashboardPage() {
           </div>
         </section>
 
-        {role === "content-manager" ? (
+        {isSuperAdmin ? (
+          <>
+            <ContentManagerDashboard projectId={projectId} />
+            <SeoOperatorDashboard projectId={projectId} />
+          </>
+        ) : role === "content-manager" ? (
           <ContentManagerDashboard projectId={projectId} />
         ) : (
           <SeoOperatorDashboard projectId={projectId} />
         )}
 
-        {role === "seo-operator" ? (
+        {role === "seo-operator" && !isSuperAdmin ? (
           <section className="grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
             <div className="rounded-lg border border-base-300 bg-base-100 p-5">
               <div className="flex items-center gap-2">

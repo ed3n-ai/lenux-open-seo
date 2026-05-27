@@ -16,10 +16,12 @@ export const getProjectAccess = createServerFn({ method: "POST" })
     z.object({ projectId: z.string().min(1) }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    return ProjectService.getProjectForOrganization(
+    const project = await ProjectService.getProjectForOrganization(
       context.organizationId,
       data.projectId,
     );
+
+    return { ...project, isSuperAdmin: context.isSuperAdmin };
   });
 
 export const setProjectWorkflowRole = createServerFn({ method: "POST" })

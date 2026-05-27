@@ -9,6 +9,10 @@ import type {
   EnsuredUserContext,
 } from "@/middleware/ensure-user/types";
 import { AppError } from "@/server/lib/errors";
+import {
+  isAllowedUserEmail,
+  isSuperAdminEmail,
+} from "@/server/auth/access-control";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { env } from "cloudflare:workers";
 
@@ -23,22 +27,15 @@ function extractProjectId(data: unknown) {
     : null;
 }
 
-function parseAllowedEmails(value: string | undefined) {
-  return new Set(
-    (value ?? "")
-      .split(/[,\n;]/)
-      .map((email) => email.trim().toLowerCase())
-      .filter(Boolean),
-  );
-}
-
 function ensureEmailAllowed(userEmail: string) {
-  const allowedEmails = parseAllowedEmails(env.ALLOWED_USER_EMAILS);
-  if (allowedEmails.size === 0) return;
-
-  if (!allowedEmails.has(userEmail.trim().toLowerCase())) {
-    throw new AppError("FORBIDDEN", "This email is not allowed to access Lenux28 SEO.");
+  if (isSuperAdminEmail(userEmail) || isAllowedUserEmail(userEmail)) {
+    return;
   }
+
+  throw new AppError(
+    "FORBIDDEN",
+    "This email is not allowed to access Lenux28 SEO.",
+  );
 }
 
 export const ensureUserMiddleware = createMiddleware({

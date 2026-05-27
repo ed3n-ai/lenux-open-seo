@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import { delegatedUsers } from "@/db/schema";
 import { ensureDelegatedOrganizationForUser } from "@/server/auth/delegated-organization";
+import { isSuperAdminEmail } from "@/server/auth/access-control";
 import { eq } from "drizzle-orm";
 import type { EnsuredUserContext } from "./types";
 
@@ -46,6 +47,7 @@ export async function resolveDelegatedContext(
   return {
     userId,
     userEmail: ensuredEmail,
+    isSuperAdmin: isSuperAdminEmail(ensuredEmail),
     organizationId,
   };
 }

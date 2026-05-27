@@ -63,12 +63,14 @@ function AppContent({
   drawerOpen,
   projectId,
   workflowRole,
+  isSuperAdmin,
   onCloseDrawer,
   children,
 }: {
   drawerOpen: boolean;
   projectId: string | null;
   workflowRole?: ContentWorkflowRole | null;
+  isSuperAdmin: boolean;
   onCloseDrawer: () => void;
   children: React.ReactNode;
 }) {
@@ -89,6 +91,7 @@ function AppContent({
               <Sidebar
                 projectId={projectId}
                 workflowRole={workflowRole}
+                isSuperAdmin={isSuperAdmin}
                 onNavigate={onCloseDrawer}
                 onClose={onCloseDrawer}
               />

@@ -55,6 +55,9 @@
       },
       "ALLOWED_USER_EMAILS": {
         "description": "Optional comma/newline separated allowlist of user emails that may access the app."
+      },
+      "SUPER_ADMIN_EMAILS": {
+        "description": "Optional comma/newline separated list of emails with unrestricted admin access."
       }
     }
   },

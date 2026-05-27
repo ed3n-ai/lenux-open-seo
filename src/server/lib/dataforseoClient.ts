@@ -6,7 +6,10 @@ import {
   roundUsdForBilling,
 } from "@/shared/billing";
 import { autumn } from "@/server/billing/autumn";
-import { getOrCreateOrganizationCustomer } from "@/server/billing/subscription";
+import {
+  customerBypassesBilling,
+  getOrCreateOrganizationCustomer,
+} from "@/server/billing/subscription";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import {
   fetchKeywordIdeasRaw,
@@ -252,7 +255,7 @@ async function meterDataforseoCall<T>(
 ): Promise<T> {
   const isHostedMode = await isHostedServerAuthMode();
 
-  if (!isHostedMode) {
+  if (!isHostedMode || customerBypassesBilling(customer)) {
     const result = await execute();
     return result.data;
   }

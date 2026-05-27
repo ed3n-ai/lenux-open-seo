@@ -6,6 +6,7 @@ import type { ContentWorkflowRole } from "@/client/features/content/contentManag
 interface SidebarProps {
   projectId: string;
   workflowRole?: ContentWorkflowRole | null;
+  isSuperAdmin?: boolean;
   onNavigate?: () => void;
   onClose?: () => void;
 }
@@ -13,10 +14,11 @@ interface SidebarProps {
 export function Sidebar({
   projectId,
   workflowRole,
+  isSuperAdmin = false,
   onNavigate,
   onClose,
 }: SidebarProps) {
-  const navGroups = getProjectNavGroups(projectId, workflowRole);
+  const navGroups = getProjectNavGroups(projectId, workflowRole, isSuperAdmin);
 
   return (
     <div className="sidebar w-64 border-r border-base-300 h-full bg-base-100 flex flex-col">

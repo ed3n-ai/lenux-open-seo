@@ -7,6 +7,7 @@ export type EnsuredProject = NonNullable<
 export type EnsuredUserContext = {
   userId: string;
   userEmail: string;
+  isSuperAdmin?: boolean;
   organizationId: string;
   project?: EnsuredProject;
 };

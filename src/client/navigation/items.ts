@@ -91,6 +91,7 @@ function getProjectNavItems(projectId: string) {
 export function getProjectNavGroups(
   projectId: string,
   role?: ContentWorkflowRole | null,
+  isSuperAdmin = false,
 ) {
   const all = getProjectNavItems(projectId);
   const bySegment = (seg: string) => all.find((i) => i.matchSegment === seg)!;
@@ -99,6 +100,44 @@ export function getProjectNavGroups(
     type: "standalone" as const,
     item: bySegment("/dashboard-root"),
   };
+
+  if (isSuperAdmin) {
+    return [
+      dashboard,
+      {
+        type: "group" as const,
+        label: "מילות מפתח",
+        icon: Search,
+        matchSegments: ["/keywords", "/saved", "/rank-tracking"],
+        items: [
+          bySegment("/keywords"),
+          bySegment("/saved"),
+          bySegment("/rank-tracking"),
+        ],
+      },
+      {
+        type: "group" as const,
+        label: "דומיין",
+        icon: Globe,
+        matchSegments: [
+          "/domain",
+          "/backlinks",
+          "/audit",
+          "/page-intelligence",
+        ],
+        items: [
+          bySegment("/domain"),
+          bySegment("/page-intelligence"),
+          bySegment("/backlinks"),
+          bySegment("/audit"),
+        ],
+      },
+      {
+        type: "standalone" as const,
+        item: bySegment("/ai"),
+      },
+    ];
+  }
 
   if (role === "content-manager") {
     return [

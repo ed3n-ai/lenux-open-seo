@@ -1,5 +1,6 @@
 import { getAuth, hasHostedAuthConfig } from "@/lib/auth";
 import { getActiveOrganizationId } from "@/lib/auth-session";
+import { isSuperAdminEmail } from "@/server/auth/access-control";
 import { getOrCreateDefaultHostedOrganization } from "@/server/auth/default-hosted-organization";
 import { AppError } from "@/server/lib/errors";
 import type { EnsuredUserContext } from "./types";
@@ -31,6 +32,7 @@ export async function resolveHostedContext(
     return {
       userId: session.user.id,
       userEmail: session.user.email,
+      isSuperAdmin: isSuperAdminEmail(session.user.email),
       organizationId: activeOrganizationId,
     };
   }
@@ -49,6 +51,7 @@ export async function resolveHostedContext(
   return {
     userId: session.user.id,
     userEmail: session.user.email,
+    isSuperAdmin: isSuperAdminEmail(session.user.email),
     organizationId,
   };
 }

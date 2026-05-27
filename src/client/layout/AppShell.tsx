@@ -44,10 +44,11 @@ export function AuthenticatedAppLayout({
   const [seoApiKeyStatusError, setSeoApiKeyStatusError] = React.useState(false);
   const [showMissingSeoApiKeyModal, setShowMissingSeoApiKeyModal] =
     React.useState(false);
-  const workflowRole = useProjectWorkflowRole(projectId ?? null);
+  const projectAccess = useProjectAccess(projectId ?? null);
+  const { workflowRole, isSuperAdmin } = projectAccess;
   const shouldRunSeoSetupCheck =
     Boolean(projectId) &&
-    workflowRole === "seo-operator" &&
+    (workflowRole === "seo-operator" || isSuperAdmin) &&
     location.pathname !== BILLING_ROUTE;
 
   React.useEffect(() => {
@@ -122,25 +123,29 @@ export function AuthenticatedAppLayout({
         drawerOpen={drawerOpen}
         projectId={projectId ?? null}
         workflowRole={workflowRole}
+        isSuperAdmin={isSuperAdmin}
         pathname={location.pathname}
         onOpenDrawer={() => setDrawerOpen(true)}
       />
 
       <SeoApiStatusBanners
         shouldShowSeoApiWarning={
-          workflowRole === "seo-operator" && shouldShowSeoApiWarning
+          !isSuperAdmin &&
+          workflowRole === "seo-operator" &&
+          shouldShowSeoApiWarning
         }
         seoApiKeyStatusError={
-          workflowRole === "seo-operator" && seoApiKeyStatusError
+          !isSuperAdmin && workflowRole === "seo-operator" && seoApiKeyStatusError
         }
       />
 
-      {banner}
+      {isSuperAdmin ? null : banner}
 
       <AppContent
         drawerOpen={drawerOpen}
         projectId={projectId ?? null}
         workflowRole={workflowRole}
+        isSuperAdmin={isSuperAdmin}
         onCloseDrawer={() => setDrawerOpen(false)}
       >
         {children}
@@ -149,7 +154,9 @@ export function AuthenticatedAppLayout({
       <MissingSeoSetupModal
         ref={setupModalRef}
         isOpen={
-          workflowRole === "seo-operator" && shouldShowMissingSeoApiKeyModal
+          !isSuperAdmin &&
+          workflowRole === "seo-operator" &&
+          shouldShowMissingSeoApiKeyModal
         }
         onClose={() => setShowMissingSeoApiKeyModal(false)}
       />
@@ -161,17 +168,19 @@ function TopNav({
   drawerOpen,
   projectId,
   workflowRole,
+  isSuperAdmin,
   pathname,
   onOpenDrawer,
 }: {
   drawerOpen: boolean;
   projectId: string | null;
   workflowRole?: ContentWorkflowRole | null;
+  isSuperAdmin: boolean;
   pathname: string;
   onOpenDrawer: () => void;
 }) {
   const navGroups = projectId
-    ? getProjectNavGroups(projectId, workflowRole)
+    ? getProjectNavGroups(projectId, workflowRole, isSuperAdmin)
     : [];
   const isSupportActive = pathname === SUPPORT_PATH;
 
@@ -333,14 +342,19 @@ function TopNav({
   );
 }
 
-function useProjectWorkflowRole(projectId: string | null) {
+function useProjectAccess(projectId: string | null) {
   const projectQuery = useQuery({
     enabled: Boolean(projectId),
     queryKey: ["project-access", projectId],
     queryFn: () => getProjectAccess({ data: { projectId: projectId ?? "" } }),
   });
 
-  return (projectQuery.data?.workflowRole ?? null) as ContentWorkflowRole | null;
+  return {
+    isSuperAdmin: projectQuery.data?.isSuperAdmin === true,
+    workflowRole: (projectQuery.data?.workflowRole ?? null) as
+      | ContentWorkflowRole
+      | null,
+  };
 }
 
 function AccountMenu({ mobileOnly = false }: { mobileOnly?: boolean }) {

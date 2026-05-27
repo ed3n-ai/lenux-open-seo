@@ -13,6 +13,7 @@ declare namespace Cloudflare {
     BETTER_AUTH_SECRET?: string;
     BETTER_AUTH_URL?: string;
     ALLOWED_USER_EMAILS?: string;
+    SUPER_ADMIN_EMAILS?: string;
 
     // DataForSEO API Basic auth value (base64 of login:password)
     DATAFORSEO_API_KEY: string;
@@ -26,6 +27,7 @@ interface ImportMetaEnv {
   readonly AUTH_MODE?: "cloudflare_access" | "local_noauth" | "hosted";
   readonly POSTHOG_PUBLIC_KEY?: string;
   readonly POSTHOG_HOST?: string;
+  readonly SUPER_ADMIN_EMAILS?: string;
 }
 
 interface ImportMeta {
