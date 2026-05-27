@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight,
   BarChart3,
@@ -18,12 +19,13 @@ import {
 } from "lucide-react";
 import type { ComponentType } from "react";
 import {
-  getStoredWorkflowRole,
   roleLabels,
-  storeWorkflowRole,
   type ContentWorkflowRole,
 } from "@/client/features/content/contentManagerStorage";
-import { useSession } from "@/lib/auth-client";
+import {
+  getProjectAccess,
+  setProjectWorkflowRole,
+} from "@/serverFunctions/projects";
 
 export const Route = createFileRoute("/_project/p/$projectId/")({
   component: CommunityDashboardPage,
@@ -71,20 +73,27 @@ const seoOperatorTools = [
 
 function CommunityDashboardPage() {
   const { projectId } = Route.useParams();
-  const { data: session } = useSession();
-  const userKey = session?.user?.id ?? session?.user?.email ?? "local-user";
-  const [role, setRole] = React.useState<ContentWorkflowRole | null>();
-
-  React.useEffect(() => {
-    setRole(getStoredWorkflowRole(projectId, userKey));
-  }, [projectId, userKey]);
+  const queryClient = useQueryClient();
+  const projectQueryKey = ["project-access", projectId] as const;
+  const projectQuery = useQuery({
+    queryKey: projectQueryKey,
+    queryFn: () => getProjectAccess({ data: { projectId } }),
+  });
+  const chooseRoleMutation = useMutation({
+    mutationFn: (workflowRole: ContentWorkflowRole) =>
+      setProjectWorkflowRole({ data: { projectId, workflowRole } }),
+    onSuccess: async (project) => {
+      queryClient.setQueryData(projectQueryKey, project);
+      await queryClient.invalidateQueries({ queryKey: projectQueryKey });
+    },
+  });
+  const role = projectQuery.data?.workflowRole ?? null;
 
   function chooseRole(nextRole: ContentWorkflowRole) {
-    storeWorkflowRole(projectId, userKey, nextRole);
-    setRole(nextRole);
+    chooseRoleMutation.mutate(nextRole);
   }
 
-  if (role === undefined) {
+  if (projectQuery.isLoading) {
     return (
       <main className="h-full overflow-auto bg-base-200 px-4 py-6 md:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
@@ -106,9 +115,14 @@ function CommunityDashboardPage() {
               איך תרצו לעבוד בפרויקט הזה?
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-base-content/70">
-              הבחירה נשמרת עבור המשתמש שלכם בתוך הפרויקט הנוכחי. אפשר להתחיל
-              במסלול אחד ולשנות בהמשך מהדשבורד.
+              הבחירה נשמרת עבור הפרויקט. לאחר הבחירה שינוי מסלול יתבצע רק דרך
+              תמיכה.
             </p>
+            {chooseRoleMutation.isError ? (
+              <div className="alert alert-error mt-4 text-sm">
+                לא הצלחנו לשמור את המסלול. נסו שוב או פנו לתמיכה.
+              </div>
+            ) : null}
           </section>
 
           <section className="grid gap-4 md:grid-cols-2">
@@ -117,6 +131,7 @@ function CommunityDashboardPage() {
               description="אני רוצה למצוא רעיונות, לבנות תוכנית כתיבה, וליצור טיוטות תוכן."
               result="תקבלו דשבורד ממוקד רעיונות, יומן תוכן, טיוטות והכנה לפרסום."
               icon={FileText}
+              isLoading={chooseRoleMutation.isPending}
               onChoose={() => chooseRole("content-manager")}
             />
             <RoleChoiceCard
@@ -124,6 +139,7 @@ function CommunityDashboardPage() {
               description="אני רוצה לנתח ביצועים, לעקוב אחרי דירוגים, ולזהות הזדמנויות ובעיות."
               result="תקבלו דשבורד ממוקד מחקר, דירוגים, דומיין, Backlinks ו-Audit."
               icon={BarChart3}
+              isLoading={chooseRoleMutation.isPending}
               onChoose={() => chooseRole("seo-operator")}
             />
           </section>
@@ -156,20 +172,6 @@ function CommunityDashboardPage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={() =>
-                  chooseRole(
-                    role === "content-manager"
-                      ? "seo-operator"
-                      : "content-manager",
-                  )
-                }
-              >
-                החלף למסלול{" "}
-                {role === "content-manager" ? "איש SEO" : "מנהל תוכן"}
-              </button>
               <Link
                 to={
                   role === "content-manager"
@@ -263,12 +265,14 @@ function RoleChoiceCard({
   description,
   result,
   icon: Icon,
+  isLoading,
   onChoose,
 }: {
   title: string;
   description: string;
   result: string;
   icon: ComponentType<{ className?: string }>;
+  isLoading: boolean;
   onChoose: () => void;
 }) {
   return (
@@ -290,8 +294,10 @@ function RoleChoiceCard({
       <button
         type="button"
         className="btn btn-primary mt-5 w-full"
+        disabled={isLoading}
         onClick={onChoose}
       >
+        {isLoading ? <span className="loading loading-spinner loading-xs" /> : null}
         בחר מסלול
       </button>
     </article>

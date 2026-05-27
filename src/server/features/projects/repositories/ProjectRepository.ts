@@ -43,6 +43,22 @@ async function createProject(
   return id;
 }
 
+async function setWorkflowRole(
+  projectId: string,
+  organizationId: string,
+  workflowRole: "content-manager" | "seo-operator",
+) {
+  await db
+    .update(projects)
+    .set({ workflowRole })
+    .where(
+      and(
+        eq(projects.id, projectId),
+        eq(projects.organizationId, organizationId),
+      ),
+    );
+}
+
 async function deleteProject(projectId: string, organizationId: string) {
   const project = await getProjectForOrganization(projectId, organizationId);
   if (!project) {
@@ -64,5 +80,6 @@ export const ProjectRepository = {
   getProjectForOrganization,
   getProjectById,
   createProject,
+  setWorkflowRole,
   deleteProject,
 } as const;

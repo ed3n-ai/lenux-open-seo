@@ -5,6 +5,7 @@ import {
   getProject,
   getProjectForOrganization,
   listProjects,
+  setProjectWorkflowRole,
 } from "@/server/features/projects/services/projects";
 
 export const ProjectService = {
@@ -14,4 +15,5 @@ export const ProjectService = {
   getOrCreateDefaultProject,
   getProject,
   getProjectForOrganization,
+  setProjectWorkflowRole,
 } as const;

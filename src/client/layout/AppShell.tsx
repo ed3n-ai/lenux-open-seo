@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Link, useLocation } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   ChevronDown,
   ChevronsUpDown,
@@ -15,15 +16,12 @@ import {
 } from "@/client/layout/AppShellParts";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
 import { getProjectNavGroups } from "@/client/navigation/items";
-import {
-  getStoredWorkflowRole,
-  workflowRoleChangedEvent,
-  type ContentWorkflowRole,
-} from "@/client/features/content/contentManagerStorage";
+import type { ContentWorkflowRole } from "@/client/features/content/contentManagerStorage";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { BILLING_ROUTE } from "@/shared/billing";
 import { getSeoApiKeyStatus } from "@/serverFunctions/config";
+import { getProjectAccess } from "@/serverFunctions/projects";
 
 const DATAFORSEO_HELP_PATH = "/help/dataforseo-api-key";
 const SUPPORT_PATH = "/support";
@@ -38,7 +36,6 @@ export function AuthenticatedAppLayout({
   banner?: React.ReactNode;
 }) {
   const location = useLocation();
-  const { data: session } = useSession();
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const setupModalRef = React.useRef<HTMLDivElement | null>(null);
   const [isSeoApiKeyConfigured, setIsSeoApiKeyConfigured] = React.useState<
@@ -47,8 +44,7 @@ export function AuthenticatedAppLayout({
   const [seoApiKeyStatusError, setSeoApiKeyStatusError] = React.useState(false);
   const [showMissingSeoApiKeyModal, setShowMissingSeoApiKeyModal] =
     React.useState(false);
-  const userKey = session?.user?.id ?? session?.user?.email ?? "local-user";
-  const workflowRole = useProjectWorkflowRole(projectId ?? null, userKey);
+  const workflowRole = useProjectWorkflowRole(projectId ?? null);
   const shouldRunSeoSetupCheck =
     Boolean(projectId) &&
     workflowRole === "seo-operator" &&
@@ -337,31 +333,14 @@ function TopNav({
   );
 }
 
-function useProjectWorkflowRole(projectId: string | null, userKey: string) {
-  const [role, setRole] = React.useState<ContentWorkflowRole | null>(null);
+function useProjectWorkflowRole(projectId: string | null) {
+  const projectQuery = useQuery({
+    enabled: Boolean(projectId),
+    queryKey: ["project-access", projectId],
+    queryFn: () => getProjectAccess({ data: { projectId: projectId ?? "" } }),
+  });
 
-  React.useEffect(() => {
-    if (!projectId) {
-      setRole(null);
-      return;
-    }
-
-    setRole(getStoredWorkflowRole(projectId, userKey));
-
-    function refresh() {
-      if (!projectId) return;
-      setRole(getStoredWorkflowRole(projectId, userKey));
-    }
-
-    window.addEventListener("storage", refresh);
-    window.addEventListener(workflowRoleChangedEvent, refresh);
-    return () => {
-      window.removeEventListener("storage", refresh);
-      window.removeEventListener(workflowRoleChangedEvent, refresh);
-    };
-  }, [projectId, userKey]);
-
-  return role;
+  return (projectQuery.data?.workflowRole ?? null) as ContentWorkflowRole | null;
 }
 
 function AccountMenu({ mobileOnly = false }: { mobileOnly?: boolean }) {

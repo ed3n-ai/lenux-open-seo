@@ -27,6 +27,9 @@ export const projects = sqliteTable("projects", {
     .references(() => organization.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   domain: text("domain"),
+  workflowRole: text("workflow_role", {
+    enum: ["content-manager", "seo-operator"],
+  }),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),

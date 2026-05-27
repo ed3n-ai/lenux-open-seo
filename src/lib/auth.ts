@@ -60,6 +60,17 @@ function createAuth() {
     }),
     plugins: [...baseAuthConfig.plugins, tanstackStartCookies()],
     databaseHooks: {
+      user: {
+        create: {
+          before: async (user) => {
+            if (typeof user.email === "string") {
+              assertHostedUserEmailAllowed(user.email);
+            }
+
+            return { data: user };
+          },
+        },
+      },
       session: {
         create: {
           before: async (session) => {
@@ -98,6 +109,24 @@ function getTrustedOrigins(baseUrl: string) {
   }
 
   return trustedOrigins;
+}
+
+function parseAllowedEmails(value: string | undefined) {
+  return new Set(
+    (value ?? "")
+      .split(/[,\n;]/)
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean),
+  );
+}
+
+function assertHostedUserEmailAllowed(userEmail: string) {
+  const allowedEmails = parseAllowedEmails(env.ALLOWED_USER_EMAILS);
+  if (allowedEmails.size === 0) return;
+
+  if (!allowedEmails.has(userEmail.trim().toLowerCase())) {
+    throw new Error("This email is not allowed to access Lenux28 SEO.");
+  }
 }
 
 function getHostedBaseUrl() {

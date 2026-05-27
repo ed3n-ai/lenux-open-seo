@@ -52,6 +52,9 @@
       },
       "OPENAI_CONTENT_REASONING_EFFORT": {
         "description": "Optional reasoning effort override for content generation. Defaults to medium."
+      },
+      "ALLOWED_USER_EMAILS": {
+        "description": "Optional comma/newline separated allowlist of user emails that may access the app."
       }
     }
   },

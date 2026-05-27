@@ -23,6 +23,24 @@ function extractProjectId(data: unknown) {
     : null;
 }
 
+function parseAllowedEmails(value: string | undefined) {
+  return new Set(
+    (value ?? "")
+      .split(/[,\n;]/)
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean),
+  );
+}
+
+function ensureEmailAllowed(userEmail: string) {
+  const allowedEmails = parseAllowedEmails(env.ALLOWED_USER_EMAILS);
+  if (allowedEmails.size === 0) return;
+
+  if (!allowedEmails.has(userEmail.trim().toLowerCase())) {
+    throw new AppError("FORBIDDEN", "This email is not allowed to access Lenux28 SEO.");
+  }
+}
+
 export const ensureUserMiddleware = createMiddleware({
   type: "function",
 }).server(async ({ next, data }) => {
@@ -37,6 +55,8 @@ export const ensureUserMiddleware = createMiddleware({
   } else {
     context = await resolveCloudflareAccessContext(headers);
   }
+
+  ensureEmailAllowed(context.userEmail);
 
   const projectId = extractProjectId(data);
 
